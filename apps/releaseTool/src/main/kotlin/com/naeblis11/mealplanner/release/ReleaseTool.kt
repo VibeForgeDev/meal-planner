@@ -27,7 +27,7 @@ fun main(args: Array<String>) {
         runTool(
             args.toList(),
             password = {
-                if (fromStdin) readLine()?.toCharArray()?.takeIf { it.isNotEmpty() } else System.console()?.readPassword("Release key password: ")
+                if (fromStdin) System.`in`.bufferedReader(Charsets.UTF_8).readLine()?.trimEnd('\r')?.toCharArray()?.takeIf { it.isNotEmpty() } else System.console()?.readPassword("Release key password: ")
             },
         ),
     )
