@@ -1,5 +1,6 @@
 package com.naeblis11.mealplanner.release
 
+import com.naeblis11.mealplanner.update.DesktopRelease
 import com.naeblis11.mealplanner.update.ReleaseManifest
 import java.io.File
 import java.nio.file.Files
@@ -33,6 +34,22 @@ class ReleaseToolTest {
         // No console to ask on: nothing is read, nothing signed.
         assertEquals(1, runTool(listOf("sign", "release-key.p12", "latest.json"), password = { null }, out = {}, err = { errors += it }))
         assertTrue(errors.last(), errors.last().contains("console"))
+    }
+
+    @Test
+    fun signTakesItsPasswordOnStandardInputOnlyWithTheFlag() {
+        // Owner, 2026-11-08: release.ps1 hands over the DPAPI-sealed password on standard input.
+        assertEquals(2, run("sign", "release-key.p12", "latest.json", "--password"))
+        assertEquals(2, run("sign", "release-key.p12", "latest.json", PASSWORD_STDIN, "extra"))
+        assertEquals(1, run("sign", "release-key.p12", "latest.json", PASSWORD_STDIN))
+        assertTrue(errors.last(), errors.last().contains("standard input"))
+        // With the flag and a password, it signs as from the console.
+        val store = Keytool.makeStore(dir, password)
+        val cert = Keytool.exportCertificate(store, password, File(dir, "test-key.cer"))
+        val trusted = cert.inputStream().use { CertificateFactory.getInstance("X.509").generateCertificate(it) }.publicKey
+        val list = File(dir, "latest.json").apply { writeText(ReleaseManifest("release-2", DesktopRelease("1.0.1", "MealPlanner-1.0.1.msi", 10, "a".repeat(64)), null).toJson()) }
+        assertEquals(0, run("sign", store.path, list.path, PASSWORD_STDIN, secret = { password.toCharArray() }, builtIn = { trusted }))
+        assertTrue(File(dir, "latest.json.sig").isFile)
     }
 
     @Test

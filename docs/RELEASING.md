@@ -12,15 +12,17 @@ Android Studio, the full JDK for the installer (docs/WINDOWS.md, "Build the inst
 Android keystore (docs/ANDROID.md, "Building a signed release"), your Google client file
 (docs/WINDOWS.md, "Building with your Google client") and the GitHub CLI (`gh`), signed in with
 `gh auth login` to an account that can publish to `naeblis11/meal-planner`. The scripts this page
-names (`tools/release-key.ps1`, `tools/release.ps1` and `tools/export_public.py`) are the owner's
-private tooling, kept in the private working repository and outside the public repository.
+names (`tools/release-key.ps1`, `tools/release-key-seal.ps1`, `tools/release.ps1` and
+`tools/export_public.py`) are the owner's private tooling, kept in the private working repository
+and outside the public repository.
 
 Publish the Google consent screen to production first (Google Cloud console, OAuth consent screen),
 or family members will be sent through Google's "unverified app" and test-user limits.
 
-**Run both scripts in a Windows PowerShell console window.** Never pipe them, never capture their
-output (`$x = .\tools\release.ps1`), and never run them in PowerShell ISE: the password prompts
-need a real console. Windows blocks scripts by default, so the commands below start each one through
+**Run the scripts that ask for a password in a Windows PowerShell console window**
+(`release-key.ps1`, `release-key-seal.ps1`, and `release.ps1` until the password is sealed). Never
+pipe them, never capture their output (`$x = .\tools\release.ps1`), and never run them in
+PowerShell ISE: the password prompts need a real console. Windows blocks scripts by default, so the commands below start each one through
 `powershell -NoProfile -ExecutionPolicy Bypass -File`, which lifts that for the one run only.
 
 ## Once: the release key
@@ -53,6 +55,22 @@ If the key really is lost for good: set `PUBLIC_KEY` in `ReleaseKeyData.kt` back
 `.\tools\release-key.ps1` to make a new key, commit, release, and install that release by hand on
 every PC and phone. From then on they trust the new key.
 
+### Once per PC: seal the password (so Claude can publish)
+
+The owner decided on 2026-11-08 that Claude may publish a release you have asked for. Signing
+needs the release key's password, which Claude never types or sees. Seal it once on the PC you
+release from:
+
+    powershell -NoProfile -ExecutionPolicy Bypass -File .\tools\release-key-seal.ps1
+
+It asks for the password twice and saves it in
+`%LOCALAPPDATA%\Meal Planner\release-key\release-key.password.dpapi`, encrypted with Windows'
+DPAPI for your Windows account: only you, signed in on this PC, can unseal it. `release.ps1` then
+signs without asking. The trade-off: anything running as your Windows user could now sign a
+release that every installed copy would offer, so keep this PC's account to yourself. Delete the
+`.dpapi` file to go back to typing the password at every release. Run the script again after
+changing the key's password, or on a new PC (the sealed file doesn't move between PCs or users).
+
 ## Each release
 
 1. Raise the versions in `apps\gradle.properties`:
@@ -80,11 +98,13 @@ every PC and phone. From then on they trust the new key.
    bare tag would make `gh release create` ignore where the tag should land: delete it or raise the
    version). It runs the Kotlin tests, builds the MSI (read back
    by its inspector) and the signed APK, stages them with `latest.json` in a new folder under
-   `%TEMP%`, and signs `latest.json`: the release tool asks for the release key's password itself
-   (it isn't shown). It refuses to sign with a key the apps don't trust.
+   `%TEMP%`, and signs `latest.json` with the sealed password (or, without it, the release tool
+   asks for the release key's password itself; it isn't shown). It refuses to sign with a key the
+   apps don't trust.
 5. It shows the versions, file names, sizes and SHA-256 values and where the tag lands, then asks
    `Publish to naeblis11/meal-planner? (y/N)`. Only `y` publishes, with `gh release create`, as
-   the repository's latest release. Anything else leaves the staged files in `%TEMP%`.
+   the repository's latest release. Anything else leaves the staged files in `%TEMP%`. `-Yes`
+   publishes without asking: Claude passes it only once you have said to publish.
 
 The script never pushes code; step 3 is yours.
 
@@ -94,8 +114,10 @@ The script never pushes code; step 3 is yours.
 
 Say "bump the version and release". Claude does steps 1 to 3: raises the versions, runs the test
 sets, commits and pushes `master`, ports any commits made directly on public, exports into its own
-clone of the public repository, checks the scan and pushes public master. It never runs either
-script or touches the release key. Then you run, in a Windows PowerShell console window:
+clone of the public repository, checks the scan and pushes public master. With the password sealed
+(above), it then runs `release.ps1 -SkipTests -Yes` itself and tells you what was published. It
+never reads the release key or the sealed password. Without the sealed password, you run, in a
+Windows PowerShell console window:
 
     powershell -NoProfile -ExecutionPolicy Bypass -File .\tools\release.ps1 -SkipTests
 

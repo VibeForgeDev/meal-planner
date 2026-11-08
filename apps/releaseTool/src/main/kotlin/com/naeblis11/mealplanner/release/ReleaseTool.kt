@@ -13,13 +13,28 @@ class ReleaseToolException(message: String) : Exception(message)
 
 const val USAGE = """Usage (tools/release.ps1 and tools/release-key.ps1 run these; docs/RELEASING.md):
   releaseTool stage <gradle.properties> <msi> <apk> <empty folder>
-  releaseTool sign <release-key.p12> <latest.json>
+  releaseTool sign <release-key.p12> <latest.json> [--password-stdin]
   releaseTool public-key <certificate> <ReleaseKeyData.kt> [--replace]"""
 
-/** The owner's release tool. `sign` asks for the release key's password on the console itself; nothing passes it in. */
+/**
+ * The release tool. `sign` asks for the release key's password on the console itself, or, with `--password-stdin`
+ * (tools/release.ps1, from the password tools/release-key-seal.ps1 sealed with DPAPI), reads it as one line of its
+ * standard input. Never from an argument or the environment, which other programs can read.
+ */
 fun main(args: Array<String>) {
-    exitProcess(runTool(args.toList(), password = { System.console()?.readPassword("Release key password: ") }))
+    val fromStdin = args.lastOrNull() == PASSWORD_STDIN
+    exitProcess(
+        runTool(
+            args.toList(),
+            password = {
+                if (fromStdin) readLine()?.toCharArray()?.takeIf { it.isNotEmpty() } else System.console()?.readPassword("Release key password: ")
+            },
+        ),
+    )
 }
+
+/** `sign`'s flag: the password comes on standard input. */
+const val PASSWORD_STDIN = "--password-stdin"
 
 /**
  * One command; 0 done, 1 refused (the reason on [err], never a stack trace), 2 usage. [builtIn] is the key built into
@@ -40,8 +55,10 @@ fun runTool(
                 out("Staged ${manifest.tag} in ${args[4]}.")
             }
             "sign" -> {
-                if (args.size != 3) return usage(err)
-                val secret = password() ?: throw ReleaseToolException("There is no console to ask for the password on: run this in a PowerShell window.")
+                if (args.size != 3 && !(args.size == 4 && args[3] == PASSWORD_STDIN)) return usage(err)
+                val secret = password() ?: throw ReleaseToolException(
+                    if (args.size == 4) "No password came on standard input." else "There is no console to ask for the password on: run this in a PowerShell window.",
+                )
                 val signature = try {
                     val trusted = try {
                         builtIn()
