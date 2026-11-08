@@ -51,7 +51,7 @@ class AndroidUpdatesTest {
         assertEquals(ReleaseEndpoints.GITHUB, updates.endpoints)
         assertEquals(File(context.cacheDir, "updates"), updates.dir)
         // ReleaseHttp's defaults: https on the usual port only (allowed() sends nothing).
-        updates.http.allowed("https://github.com/naeblis11/meal-planner/releases/latest/download/latest.json")
+        updates.http.allowed("https://github.com/VibeForgeDev/meal-planner/releases/latest/download/latest.json")
         assertThrows(IOException::class.java) { updates.http.allowed("http://github.com/x") }
         assertThrows(IOException::class.java) { updates.http.allowed("https://github.com:8443/x") }
         assertThrows(IOException::class.java) { updates.http.allowed("https://127.0.0.1/x") }

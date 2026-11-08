@@ -134,6 +134,6 @@ class FakeReleases : AutoCloseable {
     }
 
     companion object {
-        const val REPO = "/naeblis11/meal-planner"
+        const val REPO = "/VibeForgeDev/meal-planner"
     }
 }

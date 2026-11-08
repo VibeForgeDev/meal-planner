@@ -22,16 +22,23 @@ class ReleaseHttpTest {
     }
 
     @Test
+    fun theUpdateCheckAsksTheRenamedAccount() {
+        // 1.4.1: the GitHub account was renamed from naeblis11 to VibeForgeDev; new builds never ask the old name, which
+        // only redirects until someone else takes it.
+        assertEquals("https://github.com/VibeForgeDev/meal-planner/releases", ReleaseEndpoints.GITHUB.releases)
+    }
+
+    @Test
     fun theOnlyHostsAreGitHubsOwn() {
         // Spec "Updates": github.com and GitHub's download hosts, over https; nothing else, ever.
         assertEquals(setOf("github.com", "objects.githubusercontent.com", "release-assets.githubusercontent.com"), ReleaseHttp.GITHUB_HOSTS)
         assertEquals(ReleaseHttp.GITHUB_HOSTS, ReleaseHttp().hosts)
         assertEquals(
-            "https://github.com/naeblis11/meal-planner/releases/latest/download/latest.json",
+            "https://github.com/VibeForgeDev/meal-planner/releases/latest/download/latest.json",
             ReleaseEndpoints.GITHUB.latest("latest.json"),
         )
         assertEquals(
-            "https://github.com/naeblis11/meal-planner/releases/download/release-2/MealPlanner-1.0.1.msi",
+            "https://github.com/VibeForgeDev/meal-planner/releases/download/release-2/MealPlanner-1.0.1.msi",
             ReleaseEndpoints.GITHUB.asset("release-2", "MealPlanner-1.0.1.msi"),
         )
     }
@@ -49,7 +56,7 @@ class ReleaseHttpTest {
             "not an address",
         )
         for (url in refused) assertThrows(url, IOException::class.java) { github.allowed(url) }
-        assertEquals("github.com", github.allowed("https://github.com/naeblis11/meal-planner/releases").host)
+        assertEquals("github.com", github.allowed("https://github.com/VibeForgeDev/meal-planner/releases").host)
         assertThrows(IOException::class.java) { releases.http().fetch("http://localhost:${releases.port}/x", 10) }
         assertEquals(emptyList<String>(), releases.requests)
     }

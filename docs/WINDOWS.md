@@ -127,7 +127,7 @@ uninstalled it without installing it again yet, it says "Meal Planner was remove
 updated" instead: quit it from the tray, then open it again once it is installed.
 
 If **Install and close** closes Meal Planner and nothing installs, open Meal Planner again and download the
-installer from the releases page (https://github.com/naeblis11/meal-planner/releases), then run it
+installer from the releases page (https://github.com/VibeForgeDev/meal-planner/releases), then run it
 as above.
 
 ### Uninstall

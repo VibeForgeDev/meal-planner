@@ -20,7 +20,8 @@ data class ReleaseEndpoints(val releases: String) {
     fun asset(tag: String, name: String): String = "$releases/download/$tag/$name"
 
     companion object {
-        val GITHUB = ReleaseEndpoints("https://github.com/naeblis11/meal-planner/releases")
+        /** The public repository, under the owner's GitHub account (renamed from naeblis11 to VibeForgeDev, 1.4.1). */
+        val GITHUB = ReleaseEndpoints("https://github.com/VibeForgeDev/meal-planner/releases")
     }
 }
 

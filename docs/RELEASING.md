@@ -139,6 +139,6 @@ no check: update those by hand once.
     }
 
 `latest.json.sig` is the `SHA256withECDSA` signature of those exact bytes, in base64, on one line.
-The apps fetch both from `https://github.com/naeblis11/meal-planner/releases/latest/download/`, and
+The apps fetch both from `https://github.com/VibeForgeDev/meal-planner/releases/latest/download/`, and
 the files from the release named by `tag`. They contact only `github.com` and GitHub's download
 hosts (`release-assets.githubusercontent.com`, `objects.githubusercontent.com`), over https.
