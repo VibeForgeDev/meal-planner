@@ -53,6 +53,18 @@ class ReleaseToolTest {
     }
 
     @Test
+    fun aPipedPasswordLosesPowerShellsByteOrderMarkAndItsLineEnd() {
+        fun line(bytes: ByteArray) = passwordLine(bytes.inputStream())?.concatToString()
+        val bom = byteArrayOf(0xEF.toByte(), 0xBB.toByte(), 0xBF.toByte())
+        assertEquals("test-only", line(bom + "test-only\r\n".toByteArray()))
+        assertEquals("test-only", line("test-only\n".toByteArray()))
+        // UTF-8 through, a character outside ASCII too.
+        assertEquals("päss", line(bom + "päss\r\n".toByteArray(Charsets.UTF_8)))
+        assertEquals(null, line(ByteArray(0)))
+        assertEquals(null, line(bom + "\r\n".toByteArray()))
+    }
+
+    @Test
     fun publicKeyTakesOnlyReplaceAsAFourthArgument() {
         val target = File(dir, "ReleaseKeyData.kt").apply { writeText(PublicKeyFile.render("")) }
         val cert = File(dir, "test-key.cer")

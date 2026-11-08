@@ -26,15 +26,20 @@ fun main(args: Array<String>) {
     exitProcess(
         runTool(
             args.toList(),
-            password = {
-                if (fromStdin) System.`in`.bufferedReader(Charsets.UTF_8).readLine()?.trimEnd('\r')?.toCharArray()?.takeIf { it.isNotEmpty() } else System.console()?.readPassword("Release key password: ")
-            },
+            password = { if (fromStdin) passwordLine(System.`in`) else System.console()?.readPassword("Release key password: ") },
         ),
     )
 }
 
 /** `sign`'s flag: the password comes on standard input. */
 const val PASSWORD_STDIN = "--password-stdin"
+
+/**
+ * The first line of [input] as UTF-8, as a password: without its line end, and without the byte-order mark Windows
+ * PowerShell puts in front of text it pipes to a program (whatever its output encoding says). Null when there is none.
+ */
+fun passwordLine(input: java.io.InputStream): CharArray? =
+    input.bufferedReader(Charsets.UTF_8).readLine()?.removePrefix("﻿")?.trimEnd('\r')?.toCharArray()?.takeIf { it.isNotEmpty() }
 
 /**
  * One command; 0 done, 1 refused (the reason on [err], never a stack trace), 2 usage. [builtIn] is the key built into
