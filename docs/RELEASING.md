@@ -11,7 +11,7 @@ This page is for the person who makes releases. Making one needs this repository
 Android Studio, the full JDK for the installer (docs/WINDOWS.md, "Build the installer"), the
 Android keystore (docs/ANDROID.md, "Building a signed release"), your Google client file
 (docs/WINDOWS.md, "Building with your Google client") and the GitHub CLI (`gh`), signed in with
-`gh auth login` to an account that can publish to `naeblis11/meal-planner`. The scripts this page
+`gh auth login` to an account that can publish to `VibeForgeDev/meal-planner`. The scripts this page
 names (`tools/release-key.ps1`, `tools/release-key-seal.ps1`, `tools/release.ps1` and
 `tools/export_public.py`) are the owner's private tooling, kept in the private working repository
 and outside the public repository.
@@ -102,7 +102,7 @@ changing the key's password, or on a new PC (the sealed file doesn't move betwee
    asks for the release key's password itself; it isn't shown). It refuses to sign with a key the
    apps don't trust.
 5. It shows the versions, file names, sizes and SHA-256 values and where the tag lands, then asks
-   `Publish to naeblis11/meal-planner? (y/N)`. Only `y` publishes, with `gh release create`, as
+   `Publish to VibeForgeDev/meal-planner? (y/N)`. Only `y` publishes, with `gh release create`, as
    the repository's latest release. Anything else leaves the staged files in `%TEMP%`. `-Yes`
    publishes without asking: Claude passes it only once you have said to publish.
 
