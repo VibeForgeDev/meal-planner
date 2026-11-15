@@ -13,6 +13,7 @@ A recipe library, weekly meal calendar, pantry, and pantry-aware shopping list f
 - **Recipe photos** — attach a photo to a recipe (added by hand or pulled in by the Chrome extension).
 - **Windows app** — lives in the tray, keeps its library in `Documents\Meal Planner`, answers the Chrome extension and Alexa while it runs, and updates itself from this repository's signed releases. See [docs/WINDOWS.md](docs/WINDOWS.md).
 - **Android app** — a standalone version for one phone (recipes, calendar, pantry, shopping list) with no server, going online only to check GitHub for its own updates; libraries move between it and the Windows app as a backup zip. See [docs/ANDROID.md](docs/ANDROID.md).
+- **AI assistants (optional)** — an MCP server in the Windows app lets an assistant on the same PC (Claude Code, Claude Desktop) read and add recipes, plan meals, and change the pantry and shopping list. See [docs/MCP.md](docs/MCP.md).
 - **Voice control (optional)** — an Alexa skill ("Alexa, ask my chef to add milk to the cart / add olive oil to the pantry / plan tacos for dinner on Thursday") bridged through your home's Home Assistant to the Windows app. See [alexa/SETUP.md](alexa/SETUP.md).
 
 ## Install
@@ -21,6 +22,7 @@ A recipe library, weekly meal calendar, pantry, and pantry-aware shopping list f
 - **Android (8.0 or newer):** download `MealPlanner-<version>.apk` from the same Releases page on the phone; see [docs/ANDROID.md](docs/ANDROID.md).
 - **Chrome extension:** see [below](#chrome-extension).
 - **Alexa:** see [alexa/SETUP.md](alexa/SETUP.md).
+- **AI assistants (MCP):** see [docs/MCP.md](docs/MCP.md).
 
 [docs/PRIVACY.md](docs/PRIVACY.md) says what the apps send where (in short: nothing to us).
 

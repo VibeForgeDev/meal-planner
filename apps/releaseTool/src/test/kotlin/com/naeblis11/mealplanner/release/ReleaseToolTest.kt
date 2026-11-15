@@ -59,7 +59,7 @@ class ReleaseToolTest {
         assertEquals("test-only", line(bom + "test-only\r\n".toByteArray()))
         assertEquals("test-only", line("test-only\n".toByteArray()))
         // UTF-8 through, a character outside ASCII too.
-        assertEquals("päss", line(bom + "päss\r\n".toByteArray(Charsets.UTF_8)))
+        assertEquals("p\u00E4ss", line(bom + "p\u00E4ss\r\n".toByteArray(Charsets.UTF_8)))
         assertEquals(null, line(ByteArray(0)))
         assertEquals(null, line(bom + "\r\n".toByteArray()))
     }

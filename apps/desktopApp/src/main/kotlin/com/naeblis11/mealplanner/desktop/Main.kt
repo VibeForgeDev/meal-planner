@@ -23,6 +23,8 @@ import com.naeblis11.mealplanner.desktop.google.DpapiProtector
 import com.naeblis11.mealplanner.desktop.google.GoogleAccount
 import com.naeblis11.mealplanner.desktop.google.GoogleClients
 import com.naeblis11.mealplanner.desktop.google.GoogleTokenStore
+import com.naeblis11.mealplanner.desktop.mcp.McpServer
+import com.naeblis11.mealplanner.desktop.mcp.McpTools
 import com.naeblis11.mealplanner.desktop.peers.JmdnsDiscovery
 import com.naeblis11.mealplanner.desktop.peers.PeerInterfaces
 import com.naeblis11.mealplanner.desktop.peers.PeerMessages
@@ -39,6 +41,7 @@ import com.naeblis11.mealplanner.desktop.server.SecretsFile
 import com.naeblis11.mealplanner.desktop.server.ServerRoutes
 import com.naeblis11.mealplanner.desktop.server.VoiceActions
 import com.naeblis11.mealplanner.desktop.server.extensionRoutes
+import com.naeblis11.mealplanner.desktop.server.mcpRoutes
 import com.naeblis11.mealplanner.desktop.server.voiceRoutes
 import com.naeblis11.mealplanner.desktop.sync.DesktopClient
 import com.naeblis11.mealplanner.desktop.sync.DesktopSync
@@ -286,6 +289,8 @@ private fun runApp(args: Array<String>, libraryDir: File, appDataDir: File, cach
                     listOf<Route.() -> Unit>(
                         { extensionRoutes(importer, onShowReview = showWindow) },
                         { voiceRoutes(voice, token = { token.value }) },
+                        // Plan 2026-11-14: an MCP server for AI assistants on this PC (docs/MCP.md).
+                        { mcpRoutes(McpServer(McpTools(desktop.container), version)) },
                     ),
                 ),
                 port = port,

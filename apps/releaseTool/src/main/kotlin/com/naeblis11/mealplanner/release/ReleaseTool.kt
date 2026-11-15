@@ -39,7 +39,7 @@ const val PASSWORD_STDIN = "--password-stdin"
  * PowerShell puts in front of text it pipes to a program (whatever its output encoding says). Null when there is none.
  */
 fun passwordLine(input: java.io.InputStream): CharArray? =
-    input.bufferedReader(Charsets.UTF_8).readLine()?.removePrefix("﻿")?.trimEnd('\r')?.toCharArray()?.takeIf { it.isNotEmpty() }
+    input.bufferedReader(Charsets.UTF_8).readLine()?.removePrefix("\uFEFF")?.trimEnd('\r')?.toCharArray()?.takeIf { it.isNotEmpty() }
 
 /**
  * One command; 0 done, 1 refused (the reason on [err], never a stack trace), 2 usage. [builtIn] is the key built into
