@@ -34,6 +34,7 @@ fun NavGraphBuilder.krogerDestinations(nav: NavController, container: AppContain
                 more = { (vm.state.value as? SendState.Reviewing)?.let { s -> vm.search(s.current.term, more = true) } },
                 pick = vm::pick,
                 setQuantity = vm::setQuantity,
+                setQuantityFor = vm::setQuantityFor,
                 setShowUnavailable = vm::setShowUnavailable,
                 change = vm::change,
                 next = { vm.next() },

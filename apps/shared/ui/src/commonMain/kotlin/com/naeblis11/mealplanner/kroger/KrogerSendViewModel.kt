@@ -226,6 +226,14 @@ class KrogerSendViewModel(
 
     fun setQuantity(quantity: Int) = updateCurrent { it.copy(quantity = quantity.coerceIn(1, KrogerApi.MAX_QUANTITY)) }
 
+    /** The summary's How many for [nameKey]'s item; not while the add is under way. */
+    fun setQuantityFor(nameKey: String, quantity: Int) {
+        val s = _state.value as? SendState.Summary ?: return
+        if (s.adding) return
+        allItems = allItems.map { if (it.nameKey == nameKey) it.copy(quantity = quantity.coerceIn(1, KrogerApi.MAX_QUANTITY)) else it }
+        _state.value = s.copy(items = allItems)
+    }
+
     fun setShowUnavailable(show: Boolean) = updateCurrent { it.copy(showUnavailable = show) }
 
     /** Change the remembered or picked product: the search for the item's term. */

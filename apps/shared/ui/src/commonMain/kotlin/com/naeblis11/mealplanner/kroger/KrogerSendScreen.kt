@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
@@ -64,6 +65,8 @@ class SendActions(
     val more: () -> Unit = {},
     val pick: (KrogerProduct) -> Unit = {},
     val setQuantity: (Int) -> Unit = {},
+    /** The summary's How many, for one item by its name key. */
+    val setQuantityFor: (String, Int) -> Unit = { _, _ -> },
     val setShowUnavailable: (Boolean) -> Unit = {},
     val change: () -> Unit = {},
     val next: () -> Unit = {},
@@ -133,17 +136,18 @@ fun KrogerSendScreen(state: SendState, actions: SendActions, holdsLeave: Boolean
     }
 }
 
+// Above Android's navigation bar: the screen is edge to edge and the bar's buttons sit at the bottom.
 @Composable
 private fun BottomButtons(state: SendState, actions: SendActions) {
     when (state) {
-        is SendState.Reviewing -> Row(Modifier.fillMaxWidth().padding(16.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+        is SendState.Reviewing -> Row(Modifier.fillMaxWidth().navigationBarsPadding().padding(16.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             OutlinedButton(onClick = actions.back, enabled = state.index > 0, modifier = Modifier.weight(1f).heightIn(min = 48.dp)) { Text("Back") }
             OutlinedButton(onClick = actions.skip, modifier = Modifier.weight(1f).heightIn(min = 48.dp)) { Text("Skip") }
             Button(onClick = actions.next, enabled = state.current.pick != null, modifier = Modifier.weight(1f).heightIn(min = 48.dp)) {
                 Text(if (state.index == state.items.lastIndex) "Review" else "Next")
             }
         }
-        is SendState.Summary -> Row(Modifier.fillMaxWidth().padding(16.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+        is SendState.Summary -> Row(Modifier.fillMaxWidth().navigationBarsPadding().padding(16.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             OutlinedButton(onClick = actions.back, enabled = !state.adding, modifier = Modifier.heightIn(min = 48.dp)) { Text("Back") }
             Button(
                 onClick = actions.addToCart,
@@ -214,6 +218,9 @@ private fun Review(state: SendState.Reviewing, actions: SendActions) {
                 selected = item.pick?.productId == product.productId,
                 lastTime = product.productId == item.remembered?.productId,
                 onPick = { actions.pick(product) },
+                // How many, in the picked product's own card (owner, 2026-11-17), not below the whole list.
+                quantity = item.quantity.takeIf { item.pick?.productId == product.productId },
+                onQuantity = actions.setQuantity,
             )
         }
         if (!item.searched && item.pick != null) {
@@ -222,7 +229,6 @@ private fun Review(state: SendState.Reviewing, actions: SendActions) {
         if (item.more && item.searched) {
             item(key = "more") { TextButton(onClick = actions.more, enabled = !item.searching, modifier = Modifier.heightIn(min = 48.dp)) { Text("More") } }
         }
-        if (item.pick != null) item(key = "qty") { QuantityStepper(item.quantity, actions.setQuantity) }
     }
 }
 
@@ -238,34 +244,48 @@ private fun LabeledSwitch(label: String, checked: Boolean, onChange: (Boolean) -
 }
 
 @Composable
-private fun QuantityStepper(quantity: Int, onChange: (Int) -> Unit) {
-    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+private fun QuantityStepper(quantity: Int, onChange: (Int) -> Unit, enabled: Boolean = true, modifier: Modifier = Modifier) {
+    Row(modifier, verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
         Text("How many", modifier = Modifier.padding(end = 8.dp))
         OutlinedButton(
             onClick = { onChange(quantity - 1) },
-            enabled = quantity > 1,
+            enabled = enabled && quantity > 1,
             modifier = Modifier.heightIn(min = 48.dp).semantics { contentDescription = "One fewer" },
         ) { Text("\u2212") }
         Text("$quantity", style = MaterialTheme.typography.titleLarge, modifier = Modifier.semantics { contentDescription = "Quantity $quantity" })
         OutlinedButton(
             onClick = { onChange(quantity + 1) },
-            enabled = quantity < KrogerApi.MAX_QUANTITY,
+            enabled = enabled && quantity < KrogerApi.MAX_QUANTITY,
             modifier = Modifier.heightIn(min = 48.dp).semantics { contentDescription = "One more" },
         ) { Text("+") }
     }
 }
 
-/** A product as Kroger returned it: its description, brand and size, its price (and sale price), its stock. */
+/**
+ * A product as Kroger returned it: its description, brand and size, its price (and sale price), its stock. With a
+ * [quantity] (the picked one), its How many sits in the card under it.
+ */
 @Composable
-fun ProductRow(product: KrogerProduct, modality: KrogerModality, selected: Boolean, lastTime: Boolean = false, onPick: () -> Unit) {
+fun ProductRow(
+    product: KrogerProduct,
+    modality: KrogerModality,
+    selected: Boolean,
+    lastTime: Boolean = false,
+    quantity: Int? = null,
+    onQuantity: (Int) -> Unit = {},
+    onPick: () -> Unit,
+) {
     val available = product.availableFor(modality)
     Card(
         colors = CardDefaults.cardColors(containerColor = if (selected) MealColors.AccentTint else MealColors.Paper),
         border = BorderStroke(if (selected) 2.dp else 1.dp, if (selected) MealColors.Accent else MealColors.Line),
         shape = RoundedCornerShape(10.dp),
-        modifier = Modifier.fillMaxWidth().selectable(selected = selected, role = Role.RadioButton, onClick = onPick),
+        modifier = Modifier.fillMaxWidth(),
     ) {
-        Row(Modifier.padding(12.dp).heightIn(min = 48.dp), verticalAlignment = Alignment.CenterVertically) {
+        Row(
+            Modifier.fillMaxWidth().selectable(selected = selected, role = Role.RadioButton, onClick = onPick).padding(12.dp).heightIn(min = 48.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
             RadioButton(selected = selected, onClick = null)
             KrogerProductImage(product.imageUrl, modifier = Modifier.padding(start = 4.dp))
             Column(Modifier.padding(start = 12.dp).weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
@@ -277,6 +297,7 @@ fun ProductRow(product: KrogerProduct, modality: KrogerModality, selected: Boole
                 availabilityText(product, modality, lastTime)?.let { Text(it, color = MealColors.Muted, style = MaterialTheme.typography.bodyMedium) }
             }
         }
+        if (quantity != null) QuantityStepper(quantity, onQuantity, modifier = Modifier.padding(start = 12.dp, end = 12.dp, bottom = 12.dp))
     }
 }
 
@@ -313,6 +334,7 @@ private fun Summary(state: SendState.Summary, actions: SendActions) {
         if (state.picked.isEmpty()) item(key = "nothing") { Text("Nothing is picked. Go back to pick a product for an item.", color = MealColors.Muted) }
         items(state.picked, key = { "picked-${it.nameKey}" }) { item ->
             val pick = item.pick!!
+            Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 KrogerProductImage(pick.imageUrl, size = PICK_IMAGE_SIZE, modifier = Modifier.padding(end = 12.dp))
                 Column(Modifier.weight(1f)) {
@@ -320,6 +342,8 @@ private fun Summary(state: SendState.Summary, actions: SendActions) {
                     Text("For ${item.label} \u00B7 ${priceText(pick)}", color = MealColors.Muted, style = MaterialTheme.typography.bodyMedium)
                 }
                 TextButton(onClick = { actions.edit(item.nameKey) }, enabled = !state.adding, modifier = Modifier.heightIn(min = 48.dp)) { Text("Change") }
+            }
+            QuantityStepper(item.quantity, { actions.setQuantityFor(item.nameKey, it) }, enabled = !state.adding)
             }
         }
         if (state.skipped.isNotEmpty()) {

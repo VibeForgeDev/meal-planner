@@ -236,6 +236,9 @@ class KrogerSendViewModelTest {
         assertEquals(listOf("ground chuck"), summary.picked.map { it.nameKey })
         assertEquals(listOf("onion"), summary.skipped.map { it.nameKey })
         assertTrue(matches.all().isEmpty())
+        // How many can still change on the summary.
+        vm.setQuantityFor("ground chuck", 3)
+        assertEquals(3, (vm.state.value as SendState.Summary).picked.single().quantity)
 
         kroger.failCart = IOException("Kroger isn't answering right now.")
         vm.addToCart()
@@ -246,8 +249,8 @@ class KrogerSendViewModelTest {
         kroger.failCart = null
         vm.addToCart()
         await(vm) { it is SendState.Done }
-        assertEquals(listOf(KrogerCartItem("u1", 2)), kroger.cart)
-        assertEquals(listOf(KrogerMatch("ground chuck", "1", "u1", 2)), matches.all())
+        assertEquals(listOf(KrogerCartItem("u1", 3)), kroger.cart)
+        assertEquals(listOf(KrogerMatch("ground chuck", "1", "u1", 3)), matches.all())
         val done = vm.state.value as SendState.Done
         assertEquals(listOf(chuckRow), done.rowIds)
         vm.checkOff()

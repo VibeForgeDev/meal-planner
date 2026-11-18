@@ -3,6 +3,12 @@ package com.naeblis11.mealplanner.kroger
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.test.assertCountEquals
+import androidx.compose.ui.test.onAllNodesWithContentDescription
+import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithText
@@ -105,6 +111,30 @@ class KrogerPhoneTest {
         compose.onNodeWithText("Kroger Ground Chuck 80% Lean").performClick()
         assertEquals("1", picked)
         compose.onNodeWithText("Review").assertIsDisplayed()
+    }
+
+    @Test
+    fun howManyIsInThePickedProductsCardAndOnTheSummary() {
+        val kroger = FakeKrogerControls()
+        val chuck = kroger.product("1", "Kroger Ground Chuck")
+        val other = kroger.product("2", "Simple Truth Ground Chuck")
+        val item = SendItem("ground chuck", "Ground chuck", "Ground chuck", listOf(1L), "Ground chuck", results = listOf(chuck, other), searched = true, pick = chuck, quantity = 2)
+        var state: SendState by mutableStateOf(SendState.Reviewing(listOf(item), 0, KrogerModality.PICKUP, includePantry = false, pantryCount = 0))
+        var set: Int? = null
+        var setFor: Pair<String, Int>? = null
+        compose.setContent {
+            MealPlannerTheme {
+                KrogerSendScreen(state, SendActions(setQuantity = { set = it }, setQuantityFor = { k, q -> setFor = k to q }))
+            }
+        }
+        // One stepper, the picked product's.
+        compose.onAllNodesWithContentDescription("One more").assertCountEquals(1)
+        compose.onNodeWithContentDescription("Quantity 2").assertIsDisplayed()
+        compose.onNodeWithContentDescription("One more").performClick()
+        assertEquals(3, set)
+        state = SendState.Summary(listOf(item), KrogerModality.PICKUP)
+        compose.onNodeWithContentDescription("One fewer").performClick()
+        assertEquals("ground chuck" to 1, setFor)
     }
 
     @Test
