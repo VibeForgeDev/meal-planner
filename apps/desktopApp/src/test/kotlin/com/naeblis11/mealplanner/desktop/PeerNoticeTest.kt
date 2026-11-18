@@ -34,7 +34,7 @@ class FakePeerControls(initial: PeerNotice?) : PeerControls {
     }
 }
 
-/** P6-R6, P6-R8: the notice above every screen and atop Settings, Alexa's section while yielding, and a look each time Settings opens. */
+/** P6-R6, P6-R8: the notice atop Settings only (not above every screen), Alexa's section while yielding, and a look each time Settings opens. */
 class PeerNoticeTest {
     // Outermost: the app and its database close only after the compose rule has disposed the composition.
     @get:Rule(order = 0)
@@ -52,14 +52,15 @@ class PeerNoticeTest {
     }
 
     @Test
-    fun theNoticeIsAboveEveryScreenAndAtTheTopOfSettings() {
+    fun theNoticeIsOnlyAtTheTopOfSettings() {
         val text = PeerMessages.yielding("DEN")
         val peers = FakePeerControls(PeerNotice(text, PeerMessages.yieldAlexa("DEN")))
         compose.showAt(1000.dp) { MealPlannerApp(app.container, server = FakeControls(ServerStatus(ServerState.LISTENING, 5000)), peers = peers) }
-        compose.waitForText(text)
+        compose.waitForText("New recipe")
+        compose.onAllNodesWithText(text).assertCountEquals(0)
         compose.tab("Settings").click()
         compose.waitForText(SERVER_PANEL)
-        compose.onAllNodesWithText(text).assertCountEquals(2)
+        compose.onAllNodesWithText(text).assertCountEquals(1)
         compose.onNodeWithText(PeerMessages.yieldAlexa("DEN")).assertExists()
         compose.onNodeWithText(CREATE_TOKEN).assertIsNotEnabled()
     }
@@ -67,8 +68,10 @@ class PeerNoticeTest {
     @Test
     fun noNoticeUntilAnotherPcIsSeen() {
         val peers = FakePeerControls(null)
-        compose.showAt(1000.dp) { MealPlannerApp(app.container, peers = peers) }
+        compose.showAt(1000.dp) { MealPlannerApp(app.container, server = FakeControls(ServerStatus(ServerState.LISTENING, 5000)), peers = peers) }
         compose.waitForText("New recipe")
+        compose.tab("Settings").click()
+        compose.waitForText(SERVER_PANEL)
         compose.onAllNodesWithText(PeerMessages.keeping("DEN")).assertCountEquals(0)
         peers.flow.value = PeerNotice(PeerMessages.keeping("DEN"))
         compose.waitForText(PeerMessages.keeping("DEN"))

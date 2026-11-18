@@ -207,8 +207,8 @@ private fun AppShell(
                 if (restart != null) ReplacedBanner(restart)
                 // P4-R1: the desktop says above every screen while port 5000 is taken. Android has no server.
                 if (server != null) ServerNotice(server)
-                // P6-R8: another Meal Planner PC on the network, in one line above every screen. Android has none.
-                if (peers != null) PeerBanner(peers)
+                // P6-R8: another Meal Planner PC on the network is said only at the top of Settings (owner, 2026-11-18),
+                // not above every screen.
                 // Stage 4a, R8: a PC's first run found the household's main PC; Join opens Settings.
                 if (joinOffer != null) {
                     JoinOfferBanner(joinOffer, onJoin = { openSection(Routes.SETTINGS) }, Modifier.padding(horizontal = 16.dp, vertical = 8.dp))
@@ -308,13 +308,6 @@ private fun ServerNotice(server: ServerControls) {
     if (status.state == ServerState.PORT_IN_USE) {
         AttentionBanner(portInUseNotice(status.port), Modifier.padding(horizontal = 16.dp, vertical = 8.dp))
     }
-}
-
-/** P6-R8: the one-line notice about another Meal Planner PC on the network, above every screen, as the port's. */
-@Composable
-private fun PeerBanner(peers: PeerControls) {
-    val notice by peers.notice.collectAsStateWithLifecycle()
-    notice?.let { AttentionBanner(it.text, Modifier.padding(horizontal = 16.dp, vertical = 8.dp)) }
 }
 
 /**

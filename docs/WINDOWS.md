@@ -466,7 +466,7 @@ on VPN adapters (Tailscale, WireGuard, ZeroTier, TAP-Windows, Wintun). While no 
 (a laptop that started before its Wi-Fi was up), it tries again every minute and whenever you open
 Settings; once the announce works it stops trying.
 
-When it finds another PC, a line above every screen, repeated at the top of Settings, says which case
+When it finds another PC, a line at the top of Settings (not above every screen) says which case
 it is:
 - **"Another PC on this network (NAME) runs Meal Planner. Until they can sync, only that PC sends to
   Google Calendar and answers Alexa."** The other PC's household is older, so this PC steps back:
