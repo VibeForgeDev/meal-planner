@@ -37,6 +37,9 @@ import com.naeblis11.mealplanner.app.AppContainer
 import com.naeblis11.mealplanner.domain.CategoryOptions
 import com.naeblis11.mealplanner.ui.theme.MealColors
 import com.naeblis11.mealplanner.importing.CHROME_RECIPE_WAITING
+import com.naeblis11.mealplanner.kroger.KrogerControls
+import com.naeblis11.mealplanner.kroger.LocalKroger
+import com.naeblis11.mealplanner.kroger.krogerDestinations
 import com.naeblis11.mealplanner.importing.ImportInbox
 import com.naeblis11.mealplanner.importing.ImportScreen
 import com.naeblis11.mealplanner.importing.ImportState
@@ -87,6 +90,8 @@ import kotlinx.coroutines.flow.StateFlow
  * [join] is the phone's Join a PC (LAN sync stage 2c), for Settings; null on the desktop.
  * [sync] is the phone's Sync button (LAN sync stage 2c): the four main screens' top bars, the first sync's Merge or
  * Replace, the outcome and the Recipes hint; null on the desktop.
+ * [kroger] is the device's Kroger (plan 2026-11-17), on both apps: Send to Kroger on the shopping list, Settings' panel
+ * and Remembered products; null leaves them out.
  */
 @Composable
 fun MealPlannerApp(
@@ -106,10 +111,11 @@ fun MealPlannerApp(
     join: JoinControls? = null,
     sync: SyncControls? = null,
     joinOffer: JoinOfferControls? = null,
+    kroger: KrogerControls? = null,
 ) {
     BoxWithConstraints(Modifier.fillMaxSize()) {
         val wide = isWide(maxWidth, maxHeight)
-        CompositionLocalProvider(LocalWideLayout provides wide) {
+        CompositionLocalProvider(LocalWideLayout provides wide, LocalKroger provides kroger) {
             AppShell(container, startup, wide, leaveGuard, imports, server, google, quitting, peers, storage, restart, updates, devices, syncAttention, join, sync, joinOffer)
         }
     }
@@ -287,6 +293,7 @@ private fun AppShell(
                         }
                         settingsDestination(nav, container, backupVm, startImport, startup, server, google, peers, storage, updates, devices, join)
                         plannerDestinations(nav, container, google)
+                        krogerDestinations(nav, container)
                     }
                 }
             }

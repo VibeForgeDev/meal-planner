@@ -223,6 +223,8 @@ actual fun rememberAppVersion(): String {
 
 actual fun loadImageBitmap(file: File): ImageBitmap? = BitmapFactory.decodeFile(file.path)?.asImageBitmap()
 
+actual fun decodeImageBitmap(bytes: ByteArray): ImageBitmap? = BitmapFactory.decodeByteArray(bytes, 0, bytes.size)?.asImageBitmap()
+
 @Composable
 actual fun KeepScreenOn() {
     val hostView = LocalView.current

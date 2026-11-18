@@ -56,13 +56,14 @@ object HttpSyncConnector : SyncConnector {
 }
 
 /**
- * SyncClient's marks in app_meta (cursor, its hub, sent mark, last sync, full-next). They are cleared when the phone
+ * SyncClient's marks in app_meta (cursor, its hub, sent mark, last sync, full-next, the tables both sides understood). They are cleared when the phone
  * leaves, is removed, or pairs anew: otherwise a later Join would skip the Merge-or-Replace question. Nothing else in
  * app_meta (device_id, change_seq) is touched, and no data.
  */
 object SyncMarks {
     val KEYS = listOf(
         SyncClient.CURSOR_KEY, SyncClient.CURSOR_HUB_KEY, SyncClient.SENT_MARK_KEY, SyncClient.LAST_SYNC_KEY, SyncClient.FULL_NEXT_KEY,
+        SyncClient.TABLES_KEY, SyncClient.MY_TABLES_KEY,
     )
 
     suspend fun clear(db: AppDatabase) {

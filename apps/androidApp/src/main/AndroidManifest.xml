@@ -5,7 +5,9 @@
        sending.
      - INTERNET (plan 8, LAN sync 2c): the update check, update/ReleaseHttp (github.com and GitHub's download hosts over
        https; ReleaseHttpTest, AndroidUpdatesTest), and LAN sync's sync/SyncHttp, only to the PC this phone joined,
-       pinned to its certificate, on Sync and Join a PC. No other code on the phone goes online (UpdateNetworkCodeTest).
+       pinned to its certificate, on Sync and Join a PC; and (plan 2026-11-17) kroger/KrogerHttp, only to Kroger's API
+       (api.kroger.com, or api-ce.kroger.com for a test client) over https, from Send to Kroger and Settings' Kroger
+       panel. No other code on the phone goes online (UpdateNetworkCodeTest).
        Finding the PC by mDNS goes through Android's NsdManager, which needs no permission of its own here.
      - REQUEST_INSTALL_PACKAGES (plan 8): hands a downloaded, verified update to Android's package installer, only
        when the user presses Install. Android asks the user to allow "install unknown apps" for Meal Planner once.
@@ -46,6 +48,22 @@
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+
+        <!-- Plan 2026-11-17: Kroger's sign-in comes back to mealplanner://kroger; this hands the answer to the waiting
+             sign-in (which checks its state) and returns to the app. Exported, as the browser must reach it. -->
+        <activity
+            android:name=".kroger.KrogerCallbackActivity"
+            android:exported="true"
+            android:launchMode="singleTask"
+            android:noHistory="true"
+            android:theme="@android:style/Theme.Translucent.NoTitleBar">
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="mealplanner" android:host="kroger" />
             </intent-filter>
         </activity>
 

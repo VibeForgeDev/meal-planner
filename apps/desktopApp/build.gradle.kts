@@ -552,9 +552,13 @@ val googleClientResource = tasks.register<GoogleClientResource>("googleClientRes
     outputDir.set(layout.buildDirectory.dir("generated/google-client"))
 }
 
-// main's resources include the generated folder, empty when there is no client; the task runs before processResources.
+// Plan 2026-11-17: the built-in Kroger client, written the same way (gradle/kroger-client.gradle.kts).
+apply(from = rootProject.file("gradle/kroger-client.gradle.kts"))
+
+// main's resources include the generated folders, empty when there is no client; the tasks run before processResources.
 sourceSets.main {
     resources.srcDir(googleClientResource)
+    resources.srcDir(tasks.named("krogerClientResource"))
 }
 
 // Backstop: a test that ever resolved the default data folder would land in build/, never in Documents.

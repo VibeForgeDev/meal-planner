@@ -29,9 +29,13 @@ class MainActivity : ComponentActivity() {
         // The launch check, once per process (a rotation isn't a launch; a process Android ended and restored with this
         // activity's saved state is), on Updates' own IO scope, never this thread. At most once a day.
         (application as MealPlannerApplication).startLaunchCheckOnce()
+        // Plan 2026-11-17: Kroger, made off this thread; its button and panel appear once it is ready.
+        val app = application as MealPlannerApplication
+        app.startKrogerOnce()
         setContent {
             // Settings > Appearance (owner, 2026-10-12): light, dark, or the phone's own setting.
             val mode by container.theme.mode.collectAsStateWithLifecycle()
+            val kroger by app.kroger.collectAsStateWithLifecycle()
             val dark = mode.isDark(isSystemInDarkTheme())
             val ground = (if (dark) MealPalette.Dark else MealPalette.Light).paper
             SideEffect {
@@ -44,7 +48,7 @@ class MainActivity : ComponentActivity() {
                 }
             }
             MealPlannerTheme(dark = dark) {
-                MealPlannerApp(container, updates = updates, join = sync, sync = sync)
+                MealPlannerApp(container, updates = updates, join = sync, sync = sync, kroger = kroger)
             }
         }
     }

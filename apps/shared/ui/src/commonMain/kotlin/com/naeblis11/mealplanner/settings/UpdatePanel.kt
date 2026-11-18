@@ -117,7 +117,8 @@ const val SEE_UPDATE = "See update"
 const val ABOUT_PHONE_DATA =
     "Everything you keep in Meal Planner stays on this phone, and on your PC once you join one. It goes online only to " +
         "ask GitHub whether there is a newer Meal Planner and, when you choose Install, to download it, and when you press " +
-        "Sync, to reach the PC you joined on your home network; it sends nothing about you anywhere else."
+        "Sync, to reach the PC you joined on your home network, and when you use Kroger, to look up Kroger prices and " +
+        "add what you pick to your Kroger cart; it sends nothing about you anywhere else."
 
 fun lastChecked(text: String): String = "Last checked $text."
 

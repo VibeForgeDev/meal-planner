@@ -14,6 +14,8 @@ object Routes {
     const val SHOPPING = "shopping"
     const val ASSIGN = "assign/{date}/{slot}"
     const val NEEDS_ATTENTION = "needs-attention"
+    const val KROGER_SEND = "kroger-send"
+    const val KROGER_MATCHES = "kroger-matches"
 
     fun recipe(id: Long) = "recipe/$id"
 

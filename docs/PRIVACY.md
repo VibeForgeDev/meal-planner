@@ -1,6 +1,6 @@
 # Meal Planner privacy policy
 
-Last updated 12 October 2026
+Last updated 17 November 2026
 
 Meal Planner is made by VibeForgeDev. It has no accounts, no adverts and no analytics, it keeps what you enter on your own devices, and it sends none of it to us.
 
@@ -19,7 +19,7 @@ Nothing. VibeForgeDev runs no service that your data passes through, receives no
 
 ## When the app goes online
 
-The app works without a connection, and goes online only for things you ask for: to check whether a newer version is available and download one when you choose to install it, to send meals to a calendar you have connected, to fetch a photo for a recipe you are importing from a website, and to exchange your library with your own devices. Each of those sends only what the task needs. None of them sends anything to us.
+The app works without a connection, and goes online only for things you ask for: to check whether a newer version is available and download one when you choose to install it, to send meals to a calendar you have connected, to fetch a photo for a recipe you are importing from a website, to look up Kroger prices and add the products you pick to your Kroger cart, and to exchange your library with your own devices. Each of those sends only what the task needs. None of them sends anything to us.
 
 ## Your own devices
 
@@ -32,6 +32,10 @@ Connecting a calendar is optional. The app adds, changes and removes only the me
 ## Google Calendar
 
 Where the calendar you connect is a Google one, you sign in on Google's own page and the app never sees your password. It asks only to list your calendars, so you can choose one, and to manage events in the calendar you chose. Meal Planner's use of information received from Google APIs follows the Google API Services User Data Policy, including the Limited Use requirements.
+
+## Kroger
+
+Checking Kroger prices and adding items to a Kroger cart are optional. You sign in on Kroger's own page and the app never sees your password. When you use them, the app sends Kroger the store you chose and the words of the items you look up, and adds to your Kroger cart only the products you pick and confirm. Kroger handles that under its own privacy policy. The app keeps the store you chose and, for each item on your list, which product you picked and the aisle your store shelves it in, so it can suggest it next time and show the aisle on your shopping list. Product pictures are fetched from Kroger when shown and are not saved. It keeps no prices and nothing about your cart.
 
 ## Other software you connect
 

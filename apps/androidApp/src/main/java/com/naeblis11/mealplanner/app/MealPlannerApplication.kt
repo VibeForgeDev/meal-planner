@@ -1,5 +1,10 @@
 package com.naeblis11.mealplanner.app
 
+import com.naeblis11.mealplanner.kroger.AndroidKroger
+import com.naeblis11.mealplanner.kroger.KrogerControls
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import android.app.Application
 import android.content.Context
 import com.naeblis11.mealplanner.calendar.AndroidCalendarGateway
@@ -68,6 +73,31 @@ class MealPlannerApplication : Application() {
      * main thread.
      */
     val syncControls: PhoneSyncControls by lazy { syncFactory() }
+
+    /** How Kroger is made (plan 2026-11-17); full-app tests swap in a fake before anything uses it. */
+    internal var krogerFactory: () -> KrogerControls? = { AndroidKroger.create(this, container.settings) }
+
+    private val krogerStarted = AtomicBoolean(false)
+    private val _kroger = MutableStateFlow<KrogerControls?>(null)
+
+    /**
+     * Kroger: Send to Kroger, Settings' panel and Remembered products. Null until made: [startKrogerOnce] makes it on a
+     * background thread, as it reads its sealed file through the Keystore, so the shopping list never waits for it.
+     */
+    val kroger: StateFlow<KrogerControls?> = _kroger.asStateFlow()
+
+    fun startKrogerOnce() {
+        if (krogerStarted.compareAndSet(false, true)) {
+            kotlin.concurrent.thread(isDaemon = true, name = "kroger") {
+                _kroger.value = try {
+                    krogerFactory()
+                } catch (e: Exception) {
+                    System.err.println("Meal Planner: Kroger couldn't be set up (${e.javaClass.simpleName})")
+                    null
+                }
+            }
+        }
+    }
 
     private val launchCheckStarted = AtomicBoolean(false)
 

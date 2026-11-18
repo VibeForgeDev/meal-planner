@@ -4,17 +4,20 @@
      phone could name the family's own events. The calendar choice (SharedPreferences file
      "calendar", CalendarChoice.FILE) is such an id too. The sync pairing (LAN sync stage 2c,
      sync-pairing.bin in files, KeystorePairingStore.FILE_NAME) is sealed with a Keystore key
-     that stays on this phone, so a copy could never be opened. The user's backup is the zip
+     that stays on this phone, so a copy could never be opened. Kroger's sign-in (kroger.bin,
+     KeystoreKrogerStore.FILE_NAME) is sealed the same way. The user's backup is the zip
      they export from Settings. -->
 <data-extraction-rules>
     <cloud-backup>
         <exclude domain="database" path="." />
         <exclude domain="sharedpref" path="calendar.xml" />
         <exclude domain="file" path="sync-pairing.bin" />
+        <exclude domain="file" path="kroger.bin" />
     </cloud-backup>
     <device-transfer>
         <exclude domain="database" path="." />
         <exclude domain="sharedpref" path="calendar.xml" />
         <exclude domain="file" path="sync-pairing.bin" />
+        <exclude domain="file" path="kroger.bin" />
     </device-transfer>
 </data-extraction-rules>

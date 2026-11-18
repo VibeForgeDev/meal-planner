@@ -2,6 +2,7 @@ package com.naeblis11.mealplanner.ui
 
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.compose.dropUnlessResumed
 import androidx.lifecycle.createSavedStateHandle
@@ -15,6 +16,8 @@ import androidx.savedstate.read
 import com.naeblis11.mealplanner.app.AppContainer
 import com.naeblis11.mealplanner.data.RecipeRepository
 import com.naeblis11.mealplanner.domain.Week
+import com.naeblis11.mealplanner.domain.krogerAisles
+import com.naeblis11.mealplanner.kroger.LocalKroger
 import com.naeblis11.mealplanner.pantry.PantryScreen
 import com.naeblis11.mealplanner.pantry.PantryViewModel
 import com.naeblis11.mealplanner.plan.AssignMealScreen
@@ -95,6 +98,15 @@ fun NavGraphBuilder.plannerDestinations(nav: NavController, container: AppContai
         val message by vm.message.collectAsStateWithLifecycle()
         val error by vm.error.collectAsStateWithLifecycle()
         val adding by vm.adding.collectAsStateWithLifecycle()
+        // Shown once Kroger has a client here; the send itself says what is missing (a sign-in, a store).
+        val kroger = LocalKroger.current
+        val krogerStatus = kroger?.status?.collectAsStateWithLifecycle()?.value
+        val krogerReady = krogerStatus?.clientReady == true
+        // Each remembered product's aisle at this device's store, under its shopping row (owner, 2026-11-17).
+        val matchList by remember { container.krogerMatches.observe() }.collectAsStateWithLifecycle(emptyList())
+        val storeId = krogerStatus?.store?.locationId
+        val krogerAisles = remember(matchList, storeId) { krogerAisles(matchList, storeId) }
+        val openKroger = dropUnlessResumed { nav.navigate(Routes.KROGER_SEND) }
         ShoppingScreen(
             state = state,
             message = message,
@@ -108,6 +120,8 @@ fun NavGraphBuilder.plannerDestinations(nav: NavController, container: AppContai
             onRemove = vm::remove,
             onClear = vm::clear,
             wide = LocalWideLayout.current,
+            onSendToKroger = if (krogerReady) openKroger else null,
+            krogerAisles = krogerAisles,
         )
     }
     composable(

@@ -28,7 +28,9 @@ class SyncWireTest {
     fun malformedMessagesAreRefused() {
         val bad = listOf(
             "not json",
-            """{"deviceTime":1,"cursor":0,"full":false,"hubId":null,"records":[{"table":"users","key":"k","updatedAt":1,"updatedBy":"d","deleted":true}]}""",
+            // A table this build doesn't know is left out (KrogerSyncTest), but a record of one must still be well formed.
+            """{"deviceTime":1,"cursor":0,"full":false,"hubId":null,"records":[{"table":7,"key":"k","updatedAt":1,"updatedBy":"d","deleted":true}]}""",
+            """{"deviceTime":1,"cursor":0,"full":false,"hubId":null,"records":[],"tables":"recipe"}""",
             """{"deviceTime":1,"cursor":0,"full":false,"hubId":null,"records":[{"table":"recipe","key":"k","updatedAt":1,"updatedBy":"d","deleted":false}]}""",
             """{"deviceTime":1,"cursor":0,"full":false,"hubId":null,"records":[{"table":"recipe","key":"","updatedAt":1,"updatedBy":"d","deleted":true}]}""",
             """{"deviceTime":"x","cursor":0,"full":false,"hubId":null,"records":[]}""",

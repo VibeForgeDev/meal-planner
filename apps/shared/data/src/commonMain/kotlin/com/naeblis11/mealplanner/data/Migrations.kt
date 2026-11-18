@@ -71,7 +71,32 @@ object Migrations {
         }
     }
 
-    val ALL: Array<Migration> = arrayOf(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6, MIGRATION_6_7, MIGRATION_7_8)
+    /** Kroger (plan 2026-11-17): kroger_match, the household's remembered picks. The old triggers are dropped first (stage 1's rule). */
+    val MIGRATION_8_9: Migration = object : Migration(8, 9) {
+        override fun migrate(connection: SQLiteConnection) {
+            SyncSchema.dropTriggers(connection)
+            V9_TABLES.forEach { connection.execSQL(it) }
+        }
+    }
+
+    /** Kroger aisles (owner, 2026-11-17): where the store shelves each remembered product. Triggers dropped first. */
+    val MIGRATION_9_10: Migration = object : Migration(9, 10) {
+        override fun migrate(connection: SQLiteConnection) {
+            SyncSchema.dropTriggers(connection)
+            connection.execSQL("ALTER TABLE `kroger_match` ADD COLUMN `aisle` TEXT")
+            connection.execSQL("ALTER TABLE `kroger_match` ADD COLUMN `aisle_store_id` TEXT")
+        }
+    }
+
+    val ALL: Array<Migration> = arrayOf(
+        MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6, MIGRATION_6_7, MIGRATION_7_8, MIGRATION_8_9,
+        MIGRATION_9_10,
+    )
+
+    // Byte for byte the createSql of schemas/.../9.json.
+    private val V9_TABLES = listOf(
+        "CREATE TABLE IF NOT EXISTS `kroger_match` (`name_key` TEXT NOT NULL, `product_id` TEXT NOT NULL, `upc` TEXT NOT NULL, `quantity` INTEGER NOT NULL, PRIMARY KEY(`name_key`))",
+    )
 
     // Byte for byte the createSql of schemas/.../8.json.
     private val V8_TABLES = listOf(

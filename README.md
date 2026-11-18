@@ -13,6 +13,7 @@ A recipe library, weekly meal calendar, pantry, and pantry-aware shopping list f
 - **Recipe photos** — attach a photo to a recipe (added by hand or pulled in by the Chrome extension).
 - **Windows app** — lives in the tray, keeps its library in `Documents\Meal Planner`, answers the Chrome extension and Alexa while it runs, and updates itself from this repository's signed releases. See [docs/WINDOWS.md](docs/WINDOWS.md).
 - **Android app** — a standalone version for one phone (recipes, calendar, pantry, shopping list) with no server, going online only to check GitHub for its own updates; libraries move between it and the Windows app as a backup zip. See [docs/ANDROID.md](docs/ANDROID.md).
+- **Kroger (optional)** — look up your Kroger store's prices for the shopping list, pick a product for each item (remembered for next time), and add them to your Kroger cart, on the PC and the phone. See [docs/KROGER.md](docs/KROGER.md).
 - **AI assistants (optional)** — an MCP server in the Windows app lets an assistant on the same PC (Claude Code, Claude Desktop) read and add recipes, plan meals, and change the pantry and shopping list. See [docs/MCP.md](docs/MCP.md).
 - **Voice control (optional)** — an Alexa skill ("Alexa, ask my chef to add milk to the cart / add olive oil to the pantry / plan tacos for dinner on Thursday") bridged through your home's Home Assistant to the Windows app. See [alexa/SETUP.md](alexa/SETUP.md).
 
@@ -22,6 +23,7 @@ A recipe library, weekly meal calendar, pantry, and pantry-aware shopping list f
 - **Android (8.0 or newer):** download `MealPlanner-<version>.apk` from the same Releases page on the phone; see [docs/ANDROID.md](docs/ANDROID.md).
 - **Chrome extension:** see [below](#chrome-extension).
 - **Alexa:** see [alexa/SETUP.md](alexa/SETUP.md).
+- **Kroger prices and cart:** see [docs/KROGER.md](docs/KROGER.md).
 - **AI assistants (MCP):** see [docs/MCP.md](docs/MCP.md).
 
 [docs/PRIVACY.md](docs/PRIVACY.md) says what the apps send where (in short: nothing to us).
@@ -36,6 +38,8 @@ Using the apps needs only a Windows PC and, optionally, an Android phone. This i
 | **Android phone, 8.0 or newer** (optional) | Running the Android app | Download the APK from this repository's Releases page; see [docs/ANDROID.md](docs/ANDROID.md) |
 | **Google Chrome** (or another Chromium browser) | The recipe-import browser extension | [google.com/chrome](https://www.google.com/chrome/) |
 | **Home Assistant** (optional) | The Alexa skill | [home-assistant.io](https://www.home-assistant.io/), reachable by Alexa (for example with a [Nabu Casa](https://www.nabucasa.com/) subscription); see [alexa/SETUP.md](alexa/SETUP.md) |
+| **Kroger account** (optional) | Kroger prices for the shopping list and adding to your Kroger cart | Sign in from either app's Settings > Kroger; see [docs/KROGER.md](docs/KROGER.md). Releases carry the Kroger application it talks to |
+| **Kroger developer application** (maintainers) | Building the releases' built-in Kroger client (`apps/kroger-client.properties`) | Register one at [developer.kroger.com](https://developer.kroger.com/); see [docs/KROGER.md](docs/KROGER.md), "The built-in client" |
 | **Google account** (optional) | Sending the week's meals to a Google calendar | Sign in from the Windows app's Settings; see [docs/WINDOWS.md](docs/WINDOWS.md), "Google Calendar" |
 | **JmDNS** 3.6.3 (bundled in the Windows app) | Finding other Meal Planner PCs on the home network (mDNS, UDP port 5353), so only one household's PC sends to Google Calendar and answers Alexa | Nothing to install: Gradle fetches it (`org.jmdns:jmdns`, Apache License 2.0) |
 | **ktor-network-tls-certificates** 3.6.0 (bundled in the Windows app) | Making the self-signed certificate of the sync port (HTTPS on TCP 5001) that phones and other PCs pin when they pair | Nothing to install: Gradle fetches it (`io.ktor:ktor-network-tls-certificates`, Apache License 2.0) |

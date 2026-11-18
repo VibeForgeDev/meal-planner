@@ -31,12 +31,14 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.semantics.Role
@@ -49,6 +51,7 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.DialogProperties
 import com.naeblis11.mealplanner.data.ShoppingItemEntity
 import com.naeblis11.mealplanner.domain.ColumnSplit
+import com.naeblis11.mealplanner.domain.KrogerQuery
 import com.naeblis11.mealplanner.ui.AisleField
 import com.naeblis11.mealplanner.ui.AisleHeader
 import com.naeblis11.mealplanner.ui.AttentionBanner
@@ -76,6 +79,38 @@ fun ShoppingScreen(
     onClear: () -> Unit,
     /** The wide layout (P3-R4): the aisles as cards in two or three columns. */
     wide: Boolean = false,
+    /** Send to Kroger (plan 2026-11-17); null hides it (no Kroger client here). */
+    onSendToKroger: (() -> Unit)? = null,
+    /** The Kroger aisle of each item with a remembered product, by KrogerQuery.nameKey (owner, 2026-11-17). */
+    krogerAisles: Map<String, String> = emptyMap(),
+) = CompositionLocalProvider(LocalKrogerAisles provides krogerAisles) {
+    ShoppingScreenBody(
+        state, message, error, adding, onMessageShown, onCheck, onAddThisWeek, onAddItem, onSetAisle, onRemove, onClear, wide, onSendToKroger,
+    )
+}
+
+// The rows read the aisles from here, so the four places that draw a row need no extra parameter.
+private val LocalKrogerAisles = staticCompositionLocalOf<Map<String, String>> { emptyMap() }
+
+/** "Kroger: Aisle 12" under a row whose item has a remembered Kroger product with an aisle. */
+fun krogerAisleText(aisle: String): String = "Kroger: $aisle"
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun ShoppingScreenBody(
+    state: ShoppingState?,
+    message: String?,
+    error: String?,
+    adding: Boolean,
+    onMessageShown: (String) -> Unit,
+    onCheck: (ShoppingItemEntity, Boolean) -> Unit,
+    onAddThisWeek: () -> Unit,
+    onAddItem: (name: String, amount: String, unit: String, aisle: String) -> Unit,
+    onSetAisle: (ShoppingItemEntity, String) -> Unit,
+    onRemove: (ShoppingItemEntity) -> Unit,
+    onClear: () -> Unit,
+    wide: Boolean,
+    onSendToKroger: (() -> Unit)?,
 ) {
     val snackbar = remember { SnackbarHostState() }
     LaunchedEffect(message) {
@@ -103,6 +138,7 @@ fun ShoppingScreen(
                 title = { Text("Shopping list", style = MaterialTheme.typography.headlineMedium) },
                 actions = {
                     SyncAction()
+                    if (onSendToKroger != null) TextButton(onClick = onSendToKroger) { Text(SEND_TO_KROGER) }
                     TextButton(onClick = { addOpen = true }) { Text("Add item") }
                 },
             )
@@ -172,6 +208,9 @@ fun ShoppingScreen(
         )
     }
 }
+
+/** The shopping list's button for Send to Kroger: short, as the phone's top bar is narrow. */
+const val SEND_TO_KROGER = "Kroger"
 
 /** The Pi's row text: "2 cup Flour", the unit only with an amount. */
 fun shoppingLabel(item: ShoppingItemEntity): String =
@@ -287,13 +326,16 @@ private fun ShoppingRow(item: ShoppingItemEntity, label: String, onCheck: (Shopp
                     .toggleable(value = item.checked, role = Role.Checkbox, onValueChange = { onCheck(item, it) }),
             ) {
                 Checkbox(checked = item.checked, onCheckedChange = null)
-                Text(
-                    label,
-                    style = MaterialTheme.typography.bodyLarge.copy(fontSize = 18.sp),
-                    color = if (item.checked) MealColors.Muted else MealColors.Ink,
-                    textDecoration = if (item.checked) TextDecoration.LineThrough else null,
-                    modifier = Modifier.padding(start = 8.dp),
-                )
+                val krogerAisle = LocalKrogerAisles.current.takeIf { it.isNotEmpty() }?.get(KrogerQuery.nameKey(item.name))
+                Column(Modifier.padding(start = 8.dp)) {
+                    Text(
+                        label,
+                        style = MaterialTheme.typography.bodyLarge.copy(fontSize = 18.sp),
+                        color = if (item.checked) MealColors.Muted else MealColors.Ink,
+                        textDecoration = if (item.checked) TextDecoration.LineThrough else null,
+                    )
+                    krogerAisle?.let { Text(krogerAisleText(it), color = MealColors.Muted, style = MaterialTheme.typography.bodyMedium) }
+                }
             }
             TextButton(onClick = onEdit, modifier = Modifier.heightIn(min = 48.dp).semantics { contentDescription = "Edit ${item.name}" }) {
                 Text("Edit")

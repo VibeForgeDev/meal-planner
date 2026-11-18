@@ -96,6 +96,8 @@ fun SettingsScreen(
     /** Light, dark, or the system's choice (owner, 2026-10-12); null hides the panel. */
     themeMode: ThemeMode? = null,
     onThemeModeChange: (ThemeMode) -> Unit = {},
+    /** Kroger (plan 2026-11-17), both apps: the panel's content; null hides it. */
+    kroger: (@Composable () -> Unit)? = null,
 ) {
     Scaffold(
         topBar = {
@@ -149,6 +151,7 @@ fun SettingsScreen(
                     CalendarSetup(calendar, onSetUpCalendar, onChooseCalendar, onCancelChoosing, onOpenAppSettings)
                 }
             }
+            if (kroger != null) Panel(com.naeblis11.mealplanner.kroger.KROGER_PANEL) { kroger() }
             if (themeMode != null) {
                 Panel(APPEARANCE_PANEL) { AppearanceSetting(themeMode, onThemeModeChange) }
             }
@@ -510,7 +513,7 @@ const val ABOUT_DESKTOP_DATA =
     "Your recipes, meal plans and lists stay on this PC. Meal Planner goes online only to send a week to the Google " +
         "Calendar you sign in to, to fetch a recipe's photo for the Chrome extension, to answer Home Assistant on your " +
         "home network once Alexa is set up, to sync with the phones and PCs you pair (over an encrypted connection on " +
-        "your home network), and to ask GitHub whether there is a newer Meal Planner (downloading it when you choose " +
+        "your home network), to look up Kroger prices and add what you pick to your Kroger cart, and to ask GitHub whether there is a newer Meal Planner (downloading it when you choose " +
         "Install). On your home network it also says that it is running, with this PC's name, so another PC running " +
         "Meal Planner can find it."
 const val ABOUT_DESKTOP_CALENDAR = "Meals you send go to the Google calendar chosen above; Meal Planner only changes the events it sent."

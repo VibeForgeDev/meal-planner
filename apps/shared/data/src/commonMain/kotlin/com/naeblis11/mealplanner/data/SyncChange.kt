@@ -126,6 +126,7 @@ interface SyncDao {
     @Query("DELETE FROM pantry_item") suspend fun clearPantry()
     @Query("DELETE FROM ingredient_aisle") suspend fun clearAisles()
     @Query("DELETE FROM shopping_list_item") suspend fun clearShopping()
+    @Query("DELETE FROM kroger_match") suspend fun clearKrogerMatches()
     @Query("DELETE FROM sync_change") suspend fun clearChanges()
     @Query("DELETE FROM sync_pending") suspend fun clearPending()
 }

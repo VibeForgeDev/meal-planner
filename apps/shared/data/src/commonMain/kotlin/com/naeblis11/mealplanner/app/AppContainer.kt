@@ -4,6 +4,7 @@ import com.naeblis11.mealplanner.calendar.CalendarChoice
 import com.naeblis11.mealplanner.calendar.CalendarGateway
 import com.naeblis11.mealplanner.calendar.CalendarSync
 import com.naeblis11.mealplanner.data.AppDatabase
+import com.naeblis11.mealplanner.data.KrogerMatchRepository
 import com.naeblis11.mealplanner.data.MealPlanRepository
 import com.naeblis11.mealplanner.data.PantryRepository
 import com.naeblis11.mealplanner.data.RecipeRepository
@@ -48,6 +49,9 @@ class AppContainer(
     val shopping: ShoppingRepository by lazy { ShoppingRepository(database) }
 
     val pantry: PantryRepository by lazy { PantryRepository(database) }
+
+    /** Kroger's remembered picks (plan 2026-11-17), on both apps. */
+    val krogerMatches: KrogerMatchRepository by lazy { KrogerMatchRepository(database) }
 
     /** The desktop's recipe folder (Needs attention, Open recipe folder); null on Android. */
     val folder: RecipeFolderStatus? by lazy { folderStatus?.invoke() }

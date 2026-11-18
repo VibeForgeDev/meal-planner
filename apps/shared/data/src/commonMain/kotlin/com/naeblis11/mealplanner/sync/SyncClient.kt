@@ -53,6 +53,7 @@ object SyncReset {
             sync.clearPantry()
             sync.clearAisles()
             sync.clearShopping()
+            sync.clearKrogerMatches()
             sync.clearChanges()
             sync.clearPending()
         }
@@ -97,16 +98,28 @@ class SyncClient(
         val full = cursor == null || meta.get(FULL_NEXT_KEY) == "1"
         val sentMark = meta.get(SENT_MARK_KEY)?.toLongOrNull() ?: 0L
         // Replace sends nothing, and clears this device only once the PC has answered: a failed first sync loses nothing.
+        // Only what the hub understood at the last sync: a hub before Kroger refuses a whole exchange that holds anything
+        // else. A table both sides gained since is caught up with a full exchange (below).
+        val agreed = meta.get(TABLES_KEY)?.split(',')?.filter { it.isNotEmpty() }?.toSet() ?: SyncTables.BASE
         val out = when {
             replace -> emptyList()
             full -> records.everything(me)
             else -> records.changedSince(sentMark, by = me)
-        }
+        }.filter { it.table in agreed }
         val before = if (firstChoice == FirstSync.MERGE) db.recipeDao().allRecipes() else emptyList()
 
         // The hub the cursor came from: a cursor means nothing to another hub (a rebuilt PC), which answers with everything.
         val cursorHub = if (cursor == null) null else meta.get(CURSOR_HUB_KEY)
-        val reply = transport.exchange(ExchangeRequest(clock(), cursor ?: 0L, full, out, cursorHub))
+        val reply = transport.exchange(ExchangeRequest(clock(), cursor ?: 0L, full, out, cursorHub, SyncTables.KNOWN))
+        val nowAgreed = SyncTables.KNOWN intersect reply.tables
+        // A table both sides understand now that one of them didn't at the last sync is caught up with a full exchange
+        // next time when something of it was left out: the hub's records of it, when this device's build didn't know it
+        // (the hub kept them from it, and its cursor moved on); this device's own, when the hub's build didn't.
+        val gainedTables = nowAgreed - agreed
+        val mineBefore = meta.get(MY_TABLES_KEY)?.split(',')?.filter { it.isNotEmpty() }?.toSet() ?: SyncTables.BASE
+        val gained = gainedTables.isNotEmpty() && (
+            (cursor != null && !mineBefore.containsAll(gainedTables)) || records.everything(me).any { it.table in gainedTables }
+            )
         val shifted = inMyClock(reply)
         // On a client PC the recipe files go too (stage 4a), or the folder sync would index them again and send them back.
         if (replace) recipes.clearForReplace { SyncReset.clearLocal(db) }
@@ -127,7 +140,9 @@ class SyncClient(
             meta.put(AppMetaEntity(SENT_MARK_KEY, mark.toString()))
             meta.put(AppMetaEntity(LAST_SYNC_KEY, clock().toString()))
             // The hub answered with everything though this device sent only its changes: send everything next time.
-            meta.put(AppMetaEntity(FULL_NEXT_KEY, if (reply.full && !full) "1" else "0"))
+            meta.put(AppMetaEntity(FULL_NEXT_KEY, if ((reply.full && !full) || gained) "1" else "0"))
+            meta.put(AppMetaEntity(TABLES_KEY, nowAgreed.sorted().joinToString(",")))
+            meta.put(AppMetaEntity(MY_TABLES_KEY, SyncTables.KNOWN.sorted().joinToString(",")))
         }
 
         // Every photo still wanted (the applier records each), so one a dropped sync missed is fetched now. A wish stays
@@ -176,5 +191,11 @@ class SyncClient(
         const val SENT_MARK_KEY = "sync_sent_mark"
         const val LAST_SYNC_KEY = "sync_last_at"
         const val FULL_NEXT_KEY = "sync_full_next"
+
+        /** The tables this device and its hub both understood at the last sync, comma-separated (Kroger, plan 2026-11-17). */
+        const val TABLES_KEY = "sync_tables"
+
+        /** The tables this device's build understood at the last sync (what the hub sent it). */
+        const val MY_TABLES_KEY = "sync_my_tables"
     }
 }

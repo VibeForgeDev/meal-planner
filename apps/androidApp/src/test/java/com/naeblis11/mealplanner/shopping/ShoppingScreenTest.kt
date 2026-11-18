@@ -1,11 +1,13 @@
 package com.naeblis11.mealplanner.shopping
 
+import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsOff
 import androidx.compose.ui.test.assertIsOn
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.isToggleable
 import androidx.compose.ui.test.junit4.v2.createComposeRule
+import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
@@ -39,15 +41,25 @@ class ShoppingScreenTest {
     private var removed: ShoppingItemEntity? = null
     private var cleared = 0
 
-    private fun show(state: ShoppingState) = compose.setContent {
+    private fun show(state: ShoppingState, krogerAisles: Map<String, String> = emptyMap()) = compose.setContent {
         MealPlannerTheme {
             ShoppingScreen(
                 state = state, message = null, error = null, adding = false, onMessageShown = {},
                 onCheck = { item, on -> checked = item to on }, onAddThisWeek = { addedWeek++ },
                 onAddItem = { n, a, u, ai -> added = listOf(n, a, u, ai) }, onSetAisle = { item, a -> aisle = item to a },
-                onRemove = { removed = it }, onClear = { cleared++ },
+                onRemove = { removed = it }, onClear = { cleared++ }, krogerAisles = krogerAisles,
             )
         }
+    }
+
+    @Test
+    fun anItemWithARememberedKrogerProductShowsItsAisle() {
+        show(full, krogerAisles = mapOf("flour" to "AISLE 7"))
+        compose.onNodeWithText(krogerAisleText("AISLE 7")).assertIsDisplayed()
+        // The row is still one check box.
+        compose.onNode(hasText("2 cup Flour") and isToggleable()).performClick()
+        assertEquals(flour to true, checked)
+        compose.onAllNodesWithText("Kroger:", substring = true).assertCountEquals(1)
     }
 
     @Test

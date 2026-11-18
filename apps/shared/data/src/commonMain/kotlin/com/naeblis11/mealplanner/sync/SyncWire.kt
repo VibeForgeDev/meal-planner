@@ -20,7 +20,20 @@ object SyncTables {
     const val PANTRY = "pantry_item"
     const val AISLE = "ingredient_aisle"
     const val SHOPPING = "shopping_list_item"
-    val ORDER = listOf(RECIPE, MEAL, PANTRY, AISLE, SHOPPING)
+
+    /** Kroger's remembered picks (plan 2026-11-17). */
+    const val KROGER = "kroger_match"
+    val ORDER = listOf(RECIPE, MEAL, PANTRY, AISLE, SHOPPING, KROGER)
+
+    /**
+     * The tables every build since stage 2a knows, and what a side that sends no `tables` list (one before Kroger)
+     * understands. Such a side refuses a whole exchange that holds a record of any other table, so nothing else is
+     * ever sent to it (SyncClient, SyncHub).
+     */
+    val BASE: Set<String> = setOf(RECIPE, MEAL, PANTRY, AISLE, SHOPPING)
+
+    /** The tables this build understands, as it says in each exchange. */
+    val KNOWN: Set<String> = ORDER.toSet()
 }
 
 /**
@@ -46,6 +59,8 @@ data class ExchangeRequest(
     val full: Boolean,
     val records: List<SyncRecord>,
     val hubId: String? = null,
+    /** The tables the client understands; a request without the list is from a build before Kroger ([SyncTables.BASE]). */
+    val tables: Set<String> = SyncTables.KNOWN,
 )
 
 /** A photo the hub wants: the recipe's uuid and the image_hash the bytes must have. */
@@ -68,6 +83,8 @@ data class ExchangeReply(
      * readers and hubs before 4b are unaffected.
      */
     val handover: Boolean = false,
+    /** The tables the hub understands; a reply without the list is from a build before Kroger ([SyncTables.BASE]). */
+    val tables: Set<String> = SyncTables.KNOWN,
 )
 
 /** The exchange as JSON. Decoding trusts nothing: any malformed part throws IllegalArgumentException. */
@@ -75,6 +92,7 @@ object SyncWire {
     private const val MAX_KEY = 512
     private const val MAX_DEVICE = 64
     private const val MAX_HASH = 128
+    private const val MAX_TABLES = 64
 
     fun encode(request: ExchangeRequest): String = buildJsonObject {
         put("deviceTime", request.deviceTime)
@@ -82,6 +100,7 @@ object SyncWire {
         put("full", request.full)
         put("hubId", request.hubId)
         put("records", records(request.records))
+        put("tables", buildJsonArray { request.tables.sorted().forEach { add(JsonPrimitive(it)) } })
     }.toString()
 
     fun encode(reply: ExchangeReply): String = buildJsonObject {
@@ -93,6 +112,7 @@ object SyncWire {
         put("wantPhotos", buildJsonArray { reply.wantPhotos.forEach { w -> add(buildJsonObject { put("uuid", w.uuid); put("hash", w.hash) }) } })
         put("hubId", reply.hubId)
         if (reply.handover) put("handover", true)
+        put("tables", buildJsonArray { reply.tables.sorted().forEach { add(JsonPrimitive(it)) } })
     }.toString()
 
     fun encodeRecord(record: SyncRecord): String = record(record).toString()
@@ -101,7 +121,7 @@ object SyncWire {
         val o = parse(text)
         if ("hubId" !in o) bad("hubId is missing")
         val hubId = textOrNull(o, "hubId")?.also { if (it.isEmpty() || it.length > MAX_DEVICE) bad("bad hubId") }
-        return ExchangeRequest(long(o, "deviceTime"), long(o, "cursor"), flag(o, "full"), records(o), hubId)
+        return ExchangeRequest(long(o, "deviceTime"), long(o, "cursor"), flag(o, "full"), records(o), hubId, tables(o))
     }
 
     fun decodeReply(text: String): ExchangeReply {
@@ -110,10 +130,11 @@ object SyncWire {
             long(o, "hubTime"), long(o, "cursor"), flag(o, "full"), records(o), strings(o, "skipped"), photoWants(o),
             text(o, "hubId").takeIf { it.isNotEmpty() && it.length <= MAX_DEVICE } ?: bad("bad hubId"),
             if (o["handover"] == null || o["handover"] is JsonNull) false else flag(o, "handover"),
+            tables(o),
         )
     }
 
-    fun decodeRecord(text: String): SyncRecord = record(parse(text))
+    fun decodeRecord(text: String): SyncRecord = record(parse(text)) ?: bad("unknown table")
 
     /** A required text field of a record's data. */
     fun text(o: JsonObject, name: String): String = textOrNull(o, name) ?: bad("$name is missing")
@@ -123,6 +144,11 @@ object SyncWire {
         is JsonPrimitive -> if (e.isString) e.content else bad("$name is not text")
         else -> bad("$name is not text")
     }
+
+    /** A required whole number of a record's data, within Int. */
+    fun int(o: JsonObject, name: String): Int =
+        (o[name] as? JsonPrimitive)?.takeUnless { it.isString }?.longOrNull?.takeIf { it in Int.MIN_VALUE..Int.MAX_VALUE }?.toInt()
+            ?: bad("$name is not a number")
 
     fun flag(o: JsonObject, name: String): Boolean =
         (o[name] as? JsonPrimitive)?.takeUnless { it.isString }?.booleanOrNull ?: bad("$name is not true or false")
@@ -142,10 +168,22 @@ object SyncWire {
     }
 
     private fun records(o: JsonObject): List<SyncRecord> =
-        (o["records"] as? JsonArray ?: bad("records is not a list")).map { record(it as? JsonObject ?: bad("a record is not an object")) }
+        (o["records"] as? JsonArray ?: bad("records is not a list")).mapNotNull { record(it as? JsonObject ?: bad("a record is not an object")) }
 
-    private fun record(o: JsonObject): SyncRecord {
-        val table = text(o, "table").takeIf { it in SyncTables.ORDER } ?: bad("unknown table")
+    // The `tables` list, or BASE when a side before Kroger sent none.
+    private fun tables(o: JsonObject): Set<String> {
+        val list = o["tables"]?.takeUnless { it is JsonNull } ?: return SyncTables.BASE
+        val names = (list as? JsonArray ?: bad("tables is not a list")).map { e ->
+            (e as? JsonPrimitive)?.takeIf { it.isString && it.content.length <= MAX_KEY }?.content ?: bad("tables holds a non-text")
+        }
+        if (names.size > MAX_TABLES) bad("too many tables")
+        return names.toSet()
+    }
+
+    // A record of a table this build doesn't know (a later build's) is null: left out, never a failed exchange.
+    private fun record(o: JsonObject): SyncRecord? {
+        val table = text(o, "table")
+        if (table !in SyncTables.ORDER) return null
         val key = text(o, "key").takeIf { it.isNotEmpty() && it.length <= MAX_KEY } ?: bad("bad key")
         val by = text(o, "updatedBy").takeIf { it.length <= MAX_DEVICE } ?: bad("bad device")
         val deleted = flag(o, "deleted")

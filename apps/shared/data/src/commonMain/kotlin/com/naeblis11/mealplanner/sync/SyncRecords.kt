@@ -2,6 +2,7 @@ package com.naeblis11.mealplanner.sync
 
 import com.naeblis11.mealplanner.data.AppDatabase
 import com.naeblis11.mealplanner.data.IngredientAisleEntity
+import com.naeblis11.mealplanner.data.KrogerMatchEntity
 import com.naeblis11.mealplanner.data.MealSyncRow
 import com.naeblis11.mealplanner.data.PantryItemEntity
 import com.naeblis11.mealplanner.data.RecipeEntity
@@ -30,6 +31,11 @@ object SyncData {
     const val UNIT = "unit"
     const val IN_PANTRY = "in_pantry"
     const val CHECKED = "checked"
+    const val NAME_KEY = "name_key"
+    const val PRODUCT_ID = "product_id"
+    const val UPC = "upc"
+    const val QUANTITY = "quantity"
+    const val STORE_ID = "store_id"
 
     /** [imageHash] is the photo this device stands for: its own, or the one it still wishes for (SyncPhotos.wanted). */
     fun recipe(r: RecipeEntity, imageHash: String? = r.imageHash) = buildJsonObject { put(RAW_YAML, r.rawYaml); put(IMAGE_HASH, imageHash) }
@@ -47,6 +53,11 @@ object SyncData {
     fun shopping(s: ShoppingItemEntity) = buildJsonObject {
         put(SYNC_ID, s.syncId); put(NAME, s.name); put(AMOUNT, s.amount); put(UNIT, s.unit); put(AISLE, s.aisle)
         put(IN_PANTRY, s.inPantry); put(CHECKED, s.checked)
+    }
+
+    fun kroger(k: KrogerMatchEntity) = buildJsonObject {
+        put(NAME_KEY, k.nameKey); put(PRODUCT_ID, k.productId); put(UPC, k.upc); put(QUANTITY, k.quantity)
+        put(AISLE, k.aisle); put(STORE_ID, k.aisleStoreId)
     }
 }
 
@@ -83,6 +94,7 @@ class SyncRecords(private val db: AppDatabase, private val isHeld: suspend (Long
         sync.pantryItems().forEach { out += live(SyncTables.PANTRY, nameKey(it.name), SyncData.pantry(it)) }
         db.shoppingDao().knownAisles().forEach { out += live(SyncTables.AISLE, nameKey(it.name), SyncData.aisle(it)) }
         db.shoppingDao().allInIdOrder().forEach { out += live(SyncTables.SHOPPING, it.syncId, SyncData.shopping(it)) }
+        db.krogerMatchDao().all().forEach { out += live(SyncTables.KROGER, it.nameKey, SyncData.kroger(it)) }
         changes.filter { it.deleted }.forEach { out += SyncRecord(it.tableName, it.syncKey, it.updatedAt, it.updatedBy, true, null) }
         return out
     }
@@ -102,6 +114,7 @@ class SyncRecords(private val db: AppDatabase, private val isHeld: suspend (Long
         SyncTables.PANTRY -> db.pantryDao().byName(key)?.let(SyncData::pantry)
         SyncTables.AISLE -> sync.aisle(key)?.let(SyncData::aisle)
         SyncTables.SHOPPING -> sync.shopping(key)?.let(SyncData::shopping)
+        SyncTables.KROGER -> db.krogerMatchDao().byKey(key)?.let(SyncData::kroger)
         else -> null
     }
 

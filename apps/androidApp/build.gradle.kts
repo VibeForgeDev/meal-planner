@@ -98,6 +98,15 @@ android {
     }
 }
 
+// Plan 2026-11-17: the built-in Kroger client (gradle/kroger-client.gradle.kts), as a Java resource the app reads with
+// getResourceAsStream; the folder is empty when apps/kroger-client.properties is absent.
+apply(from = rootProject.file("gradle/kroger-client.gradle.kts"))
+// A File, not a Provider (AGP refuses those here); the dependency below runs the task first.
+android.sourceSets.getByName("main").resources.srcDir(layout.buildDirectory.dir("generated/kroger-client").get().asFile)
+tasks.configureEach {
+    if (name.startsWith("process") && name.endsWith("JavaRes")) dependsOn("krogerClientResource")
+}
+
 val checkReleaseSigning = tasks.register("checkReleaseSigning") {
     description = "Stops a release package early when apps/keystore.properties is missing or incomplete."
     val problem = releaseSigningProblem

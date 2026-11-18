@@ -2,6 +2,7 @@ package com.naeblis11.mealplanner.sync
 
 import com.naeblis11.mealplanner.data.AppDatabase
 import com.naeblis11.mealplanner.data.IngredientAisleEntity
+import com.naeblis11.mealplanner.data.KrogerMatchEntity
 import com.naeblis11.mealplanner.data.MealPlanEntity
 import com.naeblis11.mealplanner.data.PantryItemEntity
 import com.naeblis11.mealplanner.data.RecipeRepository
@@ -242,6 +243,7 @@ class SyncApplier(
             SyncTables.PANTRY, SyncTables.AISLE -> r.key == SyncSchema.nameKey(SyncWire.text(d, SyncData.NAME))
             SyncTables.MEAL -> r.key == SyncSchema.mealKey(SyncWire.text(d, SyncData.DATE), SyncWire.text(d, SyncData.SLOT))
             SyncTables.SHOPPING -> r.key == SyncWire.text(d, SyncData.SYNC_ID)
+            SyncTables.KROGER -> r.key == SyncWire.text(d, SyncData.NAME_KEY)
             else -> true
         }
     }
@@ -303,6 +305,19 @@ class SyncApplier(
                             inPantry = SyncWire.flag(d, SyncData.IN_PANTRY), checked = SyncWire.flag(d, SyncData.CHECKED), syncId = r.key,
                         ),
                     )
+                }
+            }
+            SyncTables.KROGER -> {
+                if (d == null) {
+                    db.krogerMatchDao().delete(r.key)
+                } else {
+                    val match = KrogerMatchEntity(
+                        nameKey = r.key, productId = SyncWire.text(d, SyncData.PRODUCT_ID), upc = SyncWire.text(d, SyncData.UPC),
+                        quantity = SyncWire.int(d, SyncData.QUANTITY), aisle = SyncWire.textOrNull(d, SyncData.AISLE),
+                        aisleStoreId = SyncWire.textOrNull(d, SyncData.STORE_ID),
+                    )
+                    require(match.productId.isNotEmpty() && match.upc.isNotEmpty() && match.quantity >= 1) { "Not a Kroger match." }
+                    db.krogerMatchDao().put(match)
                 }
             }
         }

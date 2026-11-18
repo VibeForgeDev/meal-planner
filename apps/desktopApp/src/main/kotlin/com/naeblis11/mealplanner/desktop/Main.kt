@@ -450,6 +450,11 @@ private fun runApp(args: Array<String>, libraryDir: File, appDataDir: File, cach
             // P6-R4: the app's one Household, so a send never dates the household differently from startup.
             household = { app.identity.household },
         )
+        // Kroger (plan 2026-11-17): the client from the secrets file, else the built-in one; the sign-in sealed with DPAPI
+        // beside the secrets file and answered on this PC at port 5070 (5071 for a preview).
+        val kroger = com.naeblis11.mealplanner.desktop.kroger.DesktopKroger.create(
+            secrets, DpapiProtector(), settings, port, browse = { com.naeblis11.mealplanner.desktop.google.openInBrowser(it) },
+        )
         val startup = StartWithWindows(RegExe(), settings)
         // reg.exe takes a moment, so off the main thread. Only the installed app ever writes the Run key.
         thread(isDaemon = true, name = "start-with-windows") { startup.applyAtStartup() }
@@ -584,6 +589,8 @@ private fun runApp(args: Array<String>, libraryDir: File, appDataDir: File, cach
                                 join = app.client?.controls,
                                 sync = app.client?.controls,
                                 joinOffer = app.joinOffer,
+                                // Plan 2026-11-17: Send to Kroger, Settings' Kroger panel and Remembered products.
+                                kroger = kroger,
                             )
                         }
                     }

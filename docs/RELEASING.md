@@ -92,8 +92,9 @@ changing the key's password, or on a new PC (the sealed file doesn't move betwee
 
    It checks `master`, that nothing is uncommitted, pulls `master` (fast-forward only), checks that
    public master's `EXPORTED_FROM` names this commit, then the release key, the packaging JDK, that
-   `apps\keystore.properties` and `apps\google-client.properties` exist (it never reads them; it
-   refuses without either, because releases carry the built-in Google client), `gh`'s sign-in, and
+   `apps\keystore.properties`, `apps\google-client.properties` and `apps\kroger-client.properties` exist (it
+   never reads them; it refuses without any of them, because releases carry the built-in Google and Kroger
+   clients), `gh`'s sign-in, and
    that the release's tag isn't on GitHub yet, neither as a release nor as a leftover git tag (a
    bare tag would make `gh release create` ignore where the tag should land: delete it or raise the
    version). It runs the Kotlin tests, builds the MSI (read back

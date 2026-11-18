@@ -1,5 +1,9 @@
 package com.naeblis11.mealplanner.ui
 
+import com.naeblis11.mealplanner.kroger.KrogerSetting
+import com.naeblis11.mealplanner.kroger.KrogerSettingsActions
+import com.naeblis11.mealplanner.kroger.KrogerSettingsViewModel
+import com.naeblis11.mealplanner.kroger.LocalKroger
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -140,6 +144,13 @@ fun NavGraphBuilder.settingsDestination(
         val scanGuard = rememberLaunchGuard()
         val scan = rememberCodeScanner(scanGuard, onScanned = { text -> joinVm?.scanned(text) }, onUnavailable = { joinVm?.scanUnavailable() })
         val openWifiSettings = rememberWifiSettingsOpener { joinVm?.recheckWifi() }
+        // Plan 2026-11-17: Kroger, on both apps. Leaving Settings cancels a sign-in still waiting on the browser.
+        val krogerVm: KrogerSettingsViewModel? = LocalKroger.current?.let { controls -> viewModel { KrogerSettingsViewModel(controls) } }
+        if (krogerVm != null) {
+            DisposableEffect(krogerVm) { onDispose { krogerVm.left() } }
+        }
+        val krogerState = krogerVm?.state?.collectAsStateWithLifecycle()?.value
+        val openMatches = dropUnlessResumed { nav.navigate(Routes.KROGER_MATCHES) }
         val clientGuard = rememberLaunchGuard()
         // Android's Settings registers no picker of its own for it.
         val chooseClientFile: () -> Unit =
@@ -212,6 +223,25 @@ fun NavGraphBuilder.settingsDestination(
             } ?: UpdateActions(),
             themeMode = themeMode,
             onThemeModeChange = container.theme::set,
+            kroger = if (krogerVm == null || krogerState == null) null else {
+                {
+                    KrogerSetting(
+                        krogerState,
+                        KrogerSettingsActions(
+                            signIn = krogerVm::signIn,
+                            cancelSignIn = krogerVm::cancelSignIn,
+                            signOut = krogerVm::signOut,
+                            findStores = krogerVm::findStores,
+                            chooseStore = krogerVm::chooseStore,
+                            changeStore = krogerVm::changeStore,
+                            setModality = krogerVm::setModality,
+                            useClient = krogerVm::useClient,
+                            forgetClient = krogerVm::forgetClient,
+                            openMatches = openMatches,
+                        ),
+                    )
+                }
+            },
         )
     }
 }

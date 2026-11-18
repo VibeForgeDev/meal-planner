@@ -54,7 +54,7 @@ class SyncSchemaTest {
                     it.step(); it.getLong(0)
                 }
             }
-            assertEquals(20L, names)
+            assertEquals(24L, names)
         } finally {
             db.close()
         }

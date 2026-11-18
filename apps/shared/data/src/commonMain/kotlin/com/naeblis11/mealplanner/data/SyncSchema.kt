@@ -33,6 +33,8 @@ object SyncSchema {
             "shopping_list_item", "@.`sync_id`", listOf("sync_id"),
             listOf("sync_id", "name", "amount", "unit", "aisle", "in_pantry", "checked"),
         ),
+        // The key is already folded (KrogerQuery.nameKey), as every device makes it.
+        Synced("kroger_match", "@.`name_key`", listOf("name_key"), listOf("name_key", "product_id", "upc", "quantity", "aisle", "aisle_store_id")),
     )
 
     /**

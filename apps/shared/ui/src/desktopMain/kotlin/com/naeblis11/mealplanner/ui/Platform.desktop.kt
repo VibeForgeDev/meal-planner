@@ -131,6 +131,13 @@ actual fun PlatformBackHandler(enabled: Boolean, onBack: () -> Unit) = Unit
 @Composable
 actual fun rememberAppVersion(): String = remember { System.getProperty("mealplanner.version") ?: "dev" }
 
+actual fun decodeImageBitmap(bytes: ByteArray): ImageBitmap? =
+    try {
+        Image.makeFromEncoded(bytes).toComposeImageBitmap()
+    } catch (e: Exception) {
+        null
+    }
+
 actual fun loadImageBitmap(file: File): ImageBitmap? =
     try {
         Image.makeFromEncoded(file.readBytes()).toComposeImageBitmap()

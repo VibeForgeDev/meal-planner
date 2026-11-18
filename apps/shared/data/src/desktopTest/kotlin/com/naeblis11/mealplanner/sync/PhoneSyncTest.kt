@@ -238,7 +238,8 @@ class PhoneSyncTest {
         assertEquals(device, com.naeblis11.mealplanner.data.SyncSchema.deviceId(harness.phone.db))
         assertEquals("h", meta.get(Household.KEY))
         assertEquals(
-            setOf(SyncClient.CURSOR_KEY, SyncClient.CURSOR_HUB_KEY, SyncClient.SENT_MARK_KEY, SyncClient.LAST_SYNC_KEY, SyncClient.FULL_NEXT_KEY),
+            setOf(SyncClient.CURSOR_KEY, SyncClient.CURSOR_HUB_KEY, SyncClient.SENT_MARK_KEY, SyncClient.LAST_SYNC_KEY, SyncClient.FULL_NEXT_KEY,
+                SyncClient.TABLES_KEY, SyncClient.MY_TABLES_KEY),
             SyncMarks.KEYS.toSet(),
         )
     }

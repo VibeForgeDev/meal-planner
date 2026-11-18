@@ -55,7 +55,7 @@ class SyncHub(
         val wantPhotos = SyncPhotos.wanted(db).map { (uuid, hash) -> PhotoWant(uuid, hash) }
         // The echo rule only for changes: a full reply is everything, the requester's own records too (a device that
         // starts over with Replace, or a hub restored from a backup, needs them back).
-        val reply = if (full) out else out.filter { it.updatedBy != requester }
+        val reply = (if (full) out else out.filter { it.updatedBy != requester }).filter { it.table in request.tables }
         ExchangeReply(clock(), cursor, full, reply, spoofed.map(SyncApplier::label) + result.skipped, wantPhotos, hubId)
     }
 

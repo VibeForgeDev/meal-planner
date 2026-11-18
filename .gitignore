@@ -30,6 +30,9 @@ google-calendar-key.json
 # developer's own file naming it, and the resource the build writes from it.
 apps/google-client.properties
 google-client.json
+# Plan 2026-11-17: the built-in Kroger client and the resource the build writes from it.
+apps/kroger-client.properties
+kroger-client.json
 
 # Python virtual environment for the remaining Python tests and tools
 .venv/

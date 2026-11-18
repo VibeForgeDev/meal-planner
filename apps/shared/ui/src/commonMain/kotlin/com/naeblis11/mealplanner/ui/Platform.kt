@@ -68,6 +68,9 @@ expect fun rememberAppVersion(): String
 /** Decodes a photo file; null when it is missing or not an image. Blocking: call off the main thread. */
 expect fun loadImageBitmap(file: File): ImageBitmap?
 
+/** Decodes a picture's bytes (Kroger's product pictures); null when they are not an image. Blocking. */
+expect fun decodeImageBitmap(bytes: ByteArray): ImageBitmap?
+
 /** Keeps the screen awake while this is in the composition (a recipe is read while cooking); nothing where screens don't sleep. */
 @Composable
 expect fun KeepScreenOn()

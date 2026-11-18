@@ -70,7 +70,7 @@ class MigrationTest {
     }
 
     @Test
-    fun aVersion1LibraryOpensAsVersion8WithEveryRecipeKept() = runTest {
+    fun aVersion1LibraryOpensAsVersion10WithEveryRecipeKept() = runTest {
         createAt(1) { oneRecipe() }
         val db = AppDatabase.open(context)
         try {
@@ -82,14 +82,14 @@ class MigrationTest {
             db.calendarEventDao().record(CalendarEventEntity(calendarId = 1, date = "2026-10-05", slot = "Dinner", eventId = 9, contentHash = "h"))
             assertEquals(listOf(9L), db.calendarEventDao().all().map { it.eventId })
             assertEquals(emptyList<String>(), db.recipeDao().fileNames())
-            assertEquals(8, userVersion(db))
+            assertEquals(10, userVersion(db))
         } finally {
             db.close()
         }
     }
 
     @Test
-    fun aVersion2LibraryOpensAsVersion8WithItsPlanPantryAndListKept() = runTest {
+    fun aVersion2LibraryOpensAsVersion10WithItsPlanPantryAndListKept() = runTest {
         createAt(2) {
             oneRecipe()
             execSQL("INSERT INTO meal_plan (date, slot, recipe_id, servings) VALUES ('2026-10-05', 'Dinner', 7, '4')")
@@ -105,14 +105,14 @@ class MigrationTest {
             assertTrue(milk.checked)
             assertEquals("Dairy & Eggs", db.shoppingDao().rememberedAisle("milk"))
             assertEquals(emptyList<CalendarEventEntity>(), db.calendarEventDao().all())
-            assertEquals(8, userVersion(db))
+            assertEquals(10, userVersion(db))
         } finally {
             db.close()
         }
     }
 
     @Test
-    fun aVersion3LibraryOpensAsVersion8WithEmptyFileColumns() = runTest {
+    fun aVersion3LibraryOpensAsVersion10WithEmptyFileColumns() = runTest {
         createAt(3) {
             oneRecipe()
             execSQL("INSERT INTO meal_plan (date, slot, recipe_id, servings) VALUES ('2026-10-05', 'Dinner', 7, NULL)")
@@ -128,14 +128,14 @@ class MigrationTest {
             assertNull(db.appMetaDao().get("legacy_import"))
             db.appMetaDao().put(AppMetaEntity("legacy_import", "done"))
             assertEquals("done", db.appMetaDao().get("legacy_import"))
-            assertEquals(8, userVersion(db))
+            assertEquals(10, userVersion(db))
         } finally {
             db.close()
         }
     }
 
     @Test
-    fun aVersion4LibraryOpensAsVersion8WithAnEmptyGoogleEventTable() = runTest {
+    fun aVersion4LibraryOpensAsVersion10WithAnEmptyGoogleEventTable() = runTest {
         createAt(4) {
             oneRecipe()
             execSQL("INSERT INTO app_meta (`key`, `value`) VALUES ('legacy_import', 'done')")
@@ -145,14 +145,14 @@ class MigrationTest {
             assertEquals(listOf("Soup"), db.recipeDao().names())
             assertEquals("done", db.appMetaDao().get("legacy_import"))
             assertEquals(emptyList<GoogleEventEntity>(), db.googleEventDao().all())
-            assertEquals(8, userVersion(db))
+            assertEquals(10, userVersion(db))
         } finally {
             db.close()
         }
     }
 
     @Test
-    fun aVersion6LibraryOpensAsVersion8WithItsChangesKeptAndTriggersBack() = runTest {
+    fun aVersion6LibraryOpensAsVersion10WithItsChangesKeptAndTriggersBack() = runTest {
         createAt(6) {
             oneRecipe()
             execSQL("INSERT INTO sync_change (table_name, sync_key, updated_at, updated_by, change_seq, deleted) VALUES ('recipe', 'u-7', 5, 'dev', 3, 0)")
@@ -163,14 +163,14 @@ class MigrationTest {
             assertEquals(emptyList<SyncPendingEntity>(), db.syncDao().pending())
             db.pantryDao().insertOrIgnore(PantryItemEntity(name = "Milk"))
             assertEquals(false, db.syncDao().change("pantry_item", "milk")!!.deleted)
-            assertEquals(8, userVersion(db))
+            assertEquals(10, userVersion(db))
         } finally {
             db.close()
         }
     }
 
     @Test
-    fun aVersion5LibraryOpensAsVersion8WithASyncIdOnEveryShoppingRow() = runTest {
+    fun aVersion5LibraryOpensAsVersion10WithASyncIdOnEveryShoppingRow() = runTest {
         createAt(5) {
             oneRecipe()
             execSQL("INSERT INTO shopping_list_item (name, in_pantry, checked) VALUES ('Eggs', 0, 0)")
@@ -184,7 +184,7 @@ class MigrationTest {
             rows.forEach { assertTrue(it.syncId, Regex("[0-9a-f]{32}").matches(it.syncId)) }
             assertNull(db.recipeDao().recipe(7)!!.imageHash)
             assertEquals(emptyList<SyncChangeEntity>(), db.syncDao().changedSince(-1))
-            assertEquals(8, userVersion(db))
+            assertEquals(10, userVersion(db))
         } finally {
             db.close()
         }
@@ -216,7 +216,7 @@ class MigrationTest {
     }
 
     @Test
-    fun aVersion7LibraryOpensAsVersion8WithNoPairedDevicesAndItsPendingRecordsKept() = runTest {
+    fun aVersion7LibraryOpensAsVersion10WithNoPairedDevicesAndItsPendingRecordsKept() = runTest {
         createAt(7) {
             oneRecipe()
             execSQL("INSERT INTO sync_pending (table_name, sync_key, reason, record) VALUES ('meal_plan', '2026-10-12|Dinner', 'missing_recipe', '{}')")
@@ -227,7 +227,45 @@ class MigrationTest {
             assertEquals(0, db.pairedDeviceDao().count())
             db.pantryDao().insertOrIgnore(PantryItemEntity(name = "Milk"))
             assertEquals(false, db.syncDao().change("pantry_item", "milk")!!.deleted)
-            assertEquals(8, userVersion(db))
+            assertEquals(10, userVersion(db))
+        } finally {
+            db.close()
+        }
+    }
+
+    @Test
+    fun aVersion8LibraryOpensAsVersion10WithNoKrogerMatchesAndItsDevicesKept() = runTest {
+        createAt(8) {
+            oneRecipe()
+            execSQL("INSERT INTO paired_device (device_id, name, kind, key_hash, paired_at) VALUES ('d1', 'Phone', 'phone', 'h', 1)")
+        }
+        val db = AppDatabase.open(context)
+        try {
+            assertEquals(1, db.pairedDeviceDao().count())
+            assertEquals(emptyList<KrogerMatchEntity>(), db.krogerMatchDao().all())
+            // The new table is synced: its triggers are installed with the others.
+            db.krogerMatchDao().put(KrogerMatchEntity("ground chuck", "0001", "0002", 2))
+            assertEquals(false, db.syncDao().change("kroger_match", "ground chuck")!!.deleted)
+            assertEquals(10, userVersion(db))
+        } finally {
+            db.close()
+        }
+    }
+
+    @Test
+    fun aVersion9LibraryOpensAsVersion10WithItsMatchesKeptWithoutAnAisle() = runTest {
+        createAt(9) {
+            oneRecipe()
+            execSQL("INSERT INTO kroger_match (name_key, product_id, upc, quantity) VALUES ('ground chuck', '0001', '0002', 2)")
+        }
+        val db = AppDatabase.open(context)
+        try {
+            assertEquals(listOf(KrogerMatchEntity("ground chuck", "0001", "0002", 2)), db.krogerMatchDao().all())
+            // The aisle is synced: changing it alone records a change.
+            db.krogerMatchDao().put(KrogerMatchEntity("ground chuck", "0001", "0002", 2, "Aisle 12", "01400943"))
+            assertEquals(false, db.syncDao().change("kroger_match", "ground chuck")!!.deleted)
+            assertEquals("Aisle 12", db.krogerMatchDao().byKey("ground chuck")!!.aisle)
+            assertEquals(10, userVersion(db))
         } finally {
             db.close()
         }
