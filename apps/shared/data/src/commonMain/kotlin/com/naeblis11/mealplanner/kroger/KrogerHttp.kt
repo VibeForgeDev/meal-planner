@@ -40,6 +40,9 @@ data class KrogerEndpoints(val base: String) {
             return h == "kroger.com" || (h.endsWith(".kroger.com") && h.length > ".kroger.com".length)
         }
 
+        /** Whether [url] is a product page Meal Planner may open: the same rule as a picture's. */
+        fun isPageUrl(url: String): Boolean = isImageUrl(url)
+
         /** Whether [url] is a picture Meal Planner may show: https on an [isImageHost] host, on the usual port. */
         fun isImageUrl(url: String): Boolean = try {
             val uri = URI(url)

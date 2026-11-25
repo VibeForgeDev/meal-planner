@@ -42,6 +42,25 @@ class KrogerAccountTest {
     }
 
     @Test
+    fun aProductLinksToItsPageOnKrogerComAndNowhereElse() {
+        fun page(json: String) = KrogerApi.product(kotlinx.serialization.json.Json.parseToJsonElement(json) as kotlinx.serialization.json.JsonObject)!!.pageUrl
+        // Kroger's own path, on www.kroger.com.
+        assertEquals(
+            "https://www.kroger.com/p/kroger-ground-chuck/0001111060903?cid=x",
+            page("""{"productId":"0001111060903","upc":"1","productPageURI":"/p/kroger-ground-chuck/0001111060903?cid=x"}"""),
+        )
+        // A whole kroger.com address is kept as it is.
+        assertEquals("https://www.kroger.com/p/milk/0001", page("""{"productId":"0001","upc":"1","productPageURI":"https://www.kroger.com/p/milk/0001"}"""))
+        // None given: kroger.com's page for the product id.
+        assertEquals("https://www.kroger.com/p/item/0001111060903", page("""{"productId":"0001111060903","upc":"1"}"""))
+        // Another host, or plain http, is never opened; the id's own page is used instead.
+        assertEquals("https://www.kroger.com/p/item/0001", page("""{"productId":"0001","upc":"1","productPageURI":"https://evil.example.com/p/0001"}"""))
+        assertEquals("https://www.kroger.com/p/item/0001", page("""{"productId":"0001","upc":"1","productPageURI":"http://www.kroger.com/p/0001"}"""))
+        // An id that isn't plain letters and digits makes no address.
+        assertNull(page("""{"productId":"00/../x","upc":"1"}"""))
+    }
+
+    @Test
     fun anAisleWithoutADescriptionIsNamedByItsNumberAndAPictureElsewhereIsDropped() {
         val o = kotlinx.serialization.json.Json.parseToJsonElement(
             """{"productId":"1","upc":"1","description":"Milk","aisleLocations":[{"number":"7"}],

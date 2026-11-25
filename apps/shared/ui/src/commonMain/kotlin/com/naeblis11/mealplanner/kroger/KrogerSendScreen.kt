@@ -44,6 +44,7 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
@@ -297,8 +298,26 @@ fun ProductRow(
                 availabilityText(product, modality, lastTime)?.let { Text(it, color = MealColors.Muted, style = MaterialTheme.typography.bodyMedium) }
             }
         }
+        KrogerPageLink(product, Modifier.padding(start = 8.dp))
         if (quantity != null) QuantityStepper(quantity, onQuantity, modifier = Modifier.padding(start = 12.dp, end = 12.dp, bottom = 12.dp))
     }
+}
+
+/** The text of the link to a product's page on kroger.com. */
+const val KROGER_PAGE_LINK = "See it on kroger.com"
+
+/**
+ * A link to [product]'s page on kroger.com, opened in the browser, to look at it more closely (owner, 2026-11-25);
+ * nothing when it has none. Outside the row's pick, so opening it doesn't pick the product.
+ */
+@Composable
+fun KrogerPageLink(product: KrogerProduct, modifier: Modifier = Modifier) {
+    val url = product.pageUrl ?: return
+    val uris = LocalUriHandler.current
+    TextButton(
+        onClick = { runCatching { uris.openUri(url) } },
+        modifier = modifier.heightIn(min = 48.dp).semantics { contentDescription = "$KROGER_PAGE_LINK: ${product.description}" },
+    ) { Text(KROGER_PAGE_LINK) }
 }
 
 fun priceText(product: KrogerProduct): String {
@@ -343,6 +362,7 @@ private fun Summary(state: SendState.Summary, actions: SendActions) {
                 }
                 TextButton(onClick = { actions.edit(item.nameKey) }, enabled = !state.adding, modifier = Modifier.heightIn(min = 48.dp)) { Text("Change") }
             }
+            KrogerPageLink(pick)
             QuantityStepper(item.quantity, { actions.setQuantityFor(item.nameKey, it) }, enabled = !state.adding)
             }
         }

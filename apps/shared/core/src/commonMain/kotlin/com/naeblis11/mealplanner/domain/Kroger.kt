@@ -47,6 +47,8 @@ data class KrogerProduct(
     val delivery: Boolean,
     val aisle: String? = null,
     val imageUrl: String? = null,
+    /** Its page on kroger.com, to look at it more closely (owner, 2026-11-25); only an https kroger.com address. */
+    val pageUrl: String? = null,
 ) {
     /** Whether the household can get it from the store the way it orders, and the store doesn't say it's out. */
     fun availableFor(modality: KrogerModality): Boolean {

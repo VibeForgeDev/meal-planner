@@ -22,6 +22,8 @@ them), come up one at a time:
 - **The matches:** your store's products, closest to the item's name first. Each shows Kroger's picture of it, its
   description, size, price (with the sale price when there is one), stock and aisle, as Kroger gives them. Products the store doesn't offer for your
   pickup or delivery, and ones it says are out of stock, are hidden; **Show unavailable** shows them.
+  **See it on kroger.com** under each one (and on the summary) opens its page on kroger.com in your browser, to read
+  more about it, without picking it.
 - **Search Kroger** searches again with other words; **More** loads more results.
 - **Pick one** and set **How many** in its card (the summary can change it too), or **Skip** the item. **Back** goes to the previous item.
 - **The summary** lists everything picked, each with **Change**. **Add N items to Kroger cart** sends them all at

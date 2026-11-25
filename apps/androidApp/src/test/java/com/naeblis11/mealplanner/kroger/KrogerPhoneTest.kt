@@ -114,6 +114,34 @@ class KrogerPhoneTest {
     }
 
     @Test
+    fun eachProductLinksToItsPageOnKrogerComWithoutPickingIt() {
+        val kroger = FakeKrogerControls()
+        val chuck = kroger.product("1", "Kroger Ground Chuck").copy(pageUrl = "https://www.kroger.com/p/item/1")
+        val other = kroger.product("2", "Simple Truth Ground Chuck").copy(pageUrl = "https://www.kroger.com/p/item/2")
+        val item = SendItem("ground chuck", "Ground chuck", "Ground chuck", listOf(1L), "Ground chuck", results = listOf(chuck, other), searched = true, pick = chuck, quantity = 1)
+        var state: SendState by mutableStateOf(SendState.Reviewing(listOf(item), 0, KrogerModality.PICKUP, includePantry = false, pantryCount = 0))
+        val opened = mutableListOf<String>()
+        var picked: String? = null
+        val uris = object : androidx.compose.ui.platform.UriHandler {
+            override fun openUri(uri: String) { opened += uri }
+        }
+        compose.setContent {
+            MealPlannerTheme {
+                androidx.compose.runtime.CompositionLocalProvider(androidx.compose.ui.platform.LocalUriHandler provides uris) {
+                    KrogerSendScreen(state, SendActions(pick = { picked = it.productId }))
+                }
+            }
+        }
+        compose.onNodeWithContentDescription("$KROGER_PAGE_LINK: Simple Truth Ground Chuck").performClick()
+        assertEquals(listOf("https://www.kroger.com/p/item/2"), opened)
+        assertEquals(null, picked)
+        // The summary links the picked product too.
+        state = SendState.Summary(listOf(item), KrogerModality.PICKUP)
+        compose.onNodeWithContentDescription("$KROGER_PAGE_LINK: Kroger Ground Chuck").performClick()
+        assertEquals("https://www.kroger.com/p/item/1", opened.last())
+    }
+
+    @Test
     fun howManyIsInThePickedProductsCardAndOnTheSummary() {
         val kroger = FakeKrogerControls()
         val chuck = kroger.product("1", "Kroger Ground Chuck")

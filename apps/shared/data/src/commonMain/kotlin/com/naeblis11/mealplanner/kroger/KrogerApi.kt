@@ -228,6 +228,18 @@ class KrogerApi(
             return url?.takeIf(KrogerEndpoints::isImageUrl)
         }
 
+        /**
+         * The product's page on kroger.com: Products' `productPageURI` (a path on www.kroger.com, or a whole kroger.com
+         * address), else kroger.com's page for its product id; null when neither is an https kroger.com address.
+         */
+        fun pageUrl(o: JsonObject, productId: String): String? {
+            o.text("productPageURI")?.trim()?.takeIf { it.isNotEmpty() }?.let { given ->
+                val full = if (given.startsWith("/")) "$KROGER_SITE$given" else given
+                if (KrogerEndpoints.isPageUrl(full)) return full
+            }
+            return if (PRODUCT_ID.matches(productId)) "$KROGER_SITE/p/item/$productId" else null
+        }
+
         /** Where the store shelves it, from its first aisle location: Kroger's description ("AISLE 12"), else "Aisle 12". */
         fun aisle(o: JsonObject): String? {
             val first = (o["aisleLocations"] as? JsonArray)?.firstOrNull() as? JsonObject ?: return null
@@ -256,8 +268,12 @@ class KrogerApi(
                 delivery = fulfillment?.flag("delivery") == true,
                 aisle = aisle(o),
                 imageUrl = imageUrl(o),
+                pageUrl = pageUrl(o, id),
             )
         }
+
+        private const val KROGER_SITE = "https://www.kroger.com"
+        private val PRODUCT_ID = Regex("[A-Za-z0-9]{1,32}")
 
         private fun JsonObject.text(name: String): String? = (this[name] as? JsonPrimitive)?.takeIf { it.isString }?.content
 
